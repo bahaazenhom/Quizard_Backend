@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { UserController } from "./user.controller.js";
-import { errorHandler } from "../../middlewares/globalErrorHandler.middleware";
+import { errorHandler } from "../../middlewares/globalErrorHandler.middleware.js";
 
 const router = Router();
 const userController = new UserController();

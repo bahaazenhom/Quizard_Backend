@@ -1,5 +1,5 @@
 import User from "../../models/user.model.js";
-import { ErrorClass } from "../../utils/errorClass.js";
+import { ErrorClass } from "../../utils/errorClass.util.js";
 import { sendVerificationEmail } from "../../utils/mail.util.js";
 
 export class UserService {

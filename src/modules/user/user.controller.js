@@ -1,5 +1,4 @@
 import { UserService } from "./user.service.js";
-import { ErrorClass } from "../../utils/errorClass.js";
 import {
   generateAccessToken,
   verifyAccessToken,
