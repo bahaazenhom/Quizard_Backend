@@ -39,7 +39,7 @@ export class UserController {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if (!user.isVerified) {
+    if (!user.isConfirmed) {
       return res.status(401).json({ message: "Email not verified" });
     }
     const accessToken = generateAccessToken({
