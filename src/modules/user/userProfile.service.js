@@ -30,7 +30,7 @@ class UserProfileService {
     }
 
     // Fields that shouldn't be updated through this method
-    const restrictedFields = ["password", "email", "role", "isConfirmed"];
+    const restrictedFields = ["password", "role", "isConfirmed"];
     restrictedFields.forEach((field) => delete updateData[field]);
 
     const user = await User.findByIdAndUpdate(

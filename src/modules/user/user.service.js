@@ -7,7 +7,7 @@ export class UserService {
     try {
       const user = new User(userData);
       await user.save();
-      const confirmationLink = `http://localhost:3000/confirm-email/${user._id}`;
+      const confirmationLink = `http://localhost:3000/api/v1/users/confirm-email/${user._id}`;
       await sendVerificationEmail(user.email, user.firstName, confirmationLink);
 
       return user;

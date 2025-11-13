@@ -4,6 +4,7 @@ import {
   generateAccessToken,
   verifyAccessToken,
 } from "../../utils/jwt.util.js";
+import { log } from "console";
 const userService = new UserService();
 
 export class UserController {
@@ -43,11 +44,12 @@ export class UserController {
     if (!user.isConfirmed) {
       return res.status(401).json({ message: "Email not verified" });
     }
-    const valid = await user.comparePassword(password);
-    if (!valid) {
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    await user.findByIdAndUpdate(user._id, { isActive: true });
+
+    await userService.updateUser(user._id, { isActive: true });
     const accessToken = generateAccessToken({
       userId: user._id,
     });
