@@ -4,6 +4,10 @@ import { errorHandler } from "../../middlewares/globalErrorHandler.middleware.js
 import { auth } from "../../middlewares/authentication.middleware.js";
 import { systemRoles } from "../../utils/system-roles.util.js";
 import { authorization } from "../../middlewares/authorization.middleware.js";
+import {
+  handleMulterError,
+  uploadProfilePhoto,
+} from "../../config/multer.config.js";
 
 const router = Router();
 const userController = new UserController();
@@ -17,7 +21,13 @@ router.get("/", auth(), userController.getProfile);
 router.put("/", auth(), userController.updateProfile);
 router.put("/email", auth(), userController.updateEmail);
 router.put("/password", auth(), userController.changePassword);
-router.put("/photo", auth(), userController.updateProfilePhoto);
+router.put(
+  "/photo",
+  auth(),
+  uploadProfilePhoto,
+  handleMulterError,
+  userController.updateProfilePhoto
+);
 router.get("/stats", auth(), userController.getUserStats);
 
 // Admin only routes

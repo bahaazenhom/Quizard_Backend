@@ -189,14 +189,19 @@ export class UserController {
   async updateProfilePhoto(req, res, next) {
     try {
       const userId = req.authUser._id;
-      const { photoURL } = req.body;
 
-      if (!photoURL) {
+      // Check if file was uploaded
+      if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: "Photo URL is required",
+          message: "Photo file is required",
         });
       }
+
+      // Create the photo URL from the uploaded file path
+      // Adjust based on your server configuration
+      const photoURL = `/uploads/profiles/${req.file.filename}`;
+      // Or with domain: `${process.env.BASE_URL}/uploads/profiles/${req.file.filename}`
 
       const user = await UserProfileService.updateProfilePhoto(
         userId,
@@ -207,6 +212,7 @@ export class UserController {
         success: true,
         message: "Profile photo updated successfully",
         data: user,
+        photoURL: photoURL, // Return the URL for frontend
       });
     } catch (error) {
       next(error);
