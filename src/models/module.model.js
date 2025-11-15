@@ -17,6 +17,10 @@ const GroupSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+GroupSchema.index({ teachers: 1 });
+GroupSchema.index({ students: 1 });
+
+
 GroupSchema.pre("save", function (next) {
   if (!this.inviteCode) {
     this.inviteCode = nanoid(6);

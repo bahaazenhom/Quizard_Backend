@@ -13,7 +13,7 @@ export class ModuleController {
 
   async getMyGroups(req, res, next) {
     try {
-      const userId = req.user._id; // assuming req.user exists from auth middleware
+      const userId = req.authUser._id;
       const myGroups = await moduleService.getMyGroups(userId);
       res.status(200).json({ success: true, data: myGroups });
     } catch (error) {
