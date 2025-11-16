@@ -1,4 +1,4 @@
-import { mongo } from "mongoose";
+import mongoose from "mongoose";
 import { nanoid } from "nanoid";
 
 const groupSchema = new mongoose.Schema(
@@ -21,8 +21,8 @@ const groupSchema = new mongoose.Schema(
 
 groupSchema.pre("save", function (next) {
   if (!this.inviteCode) {
-    this.inviteCode = nanoid(6); // Assume this function generates a unique invite code
-    this.inviteExpiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 7 days from now
+    this.inviteCode = nanoid(6); 
+    this.inviteExpiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000); 
   }
   next();
 });

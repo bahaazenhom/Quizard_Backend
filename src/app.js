@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import userRouter from "./modules/user/user.route.js";
-import moduleRouter from "./modules/module/module.route.js";
+import groupRouter from "./modules/Group/group.route.js";
 import cors from "cors";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,7 +27,7 @@ app.use(express.json());
 // Define your routes here
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/v1/users", userRouter);
-app.use("/api/v1/modules", moduleRouter);
+app.use("/api/v1/groups", groupRouter);
 
 // global error handler
 app.use(globalResponse);

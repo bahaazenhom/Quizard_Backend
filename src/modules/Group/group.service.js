@@ -1,31 +1,28 @@
 import mongoose from "mongoose";
-import Module from "../../models/module.model.js";
 import { ErrorClass } from "../../utils/errorClass.util.js";
-
-export class ModuleService {
-    async getModule() {
+import Group from "../../models/group.model.js"
+export class GroupService {
+    async getGroup() {
         try {
-            const modules = await Module.find();
-            if (!modules || modules.length === 0)
-                throw new ErrorClass("Cannot get Modules", 404);
-            return modules;
+            const groups = await Group.find();
+            console.log(groups)
+            if (!groups)
+                throw new ErrorClass("Cannot get groups", 404);
+            return groups;
         } catch (error) {
             throw new ErrorClass(
-                "Failed to get module",
+                "Failed to get groups",
                 500,
                 error.message,
-                "moduleService.getModule"
+                "moduleService.getGroup"
             );
         }
     }
 
     async getMyGroups(userId) {
         try {
-            const modules = await Module.find({
-                isArchived: false,
-                $or: [{ teachers: userId }, { students: userId }],
-            });
-            return modules;
+            const groups = await GroupMember.find({ user: userId }).populate("group");
+            return groups;
         } catch (error) {
             throw new ErrorClass(
                 "Failed to get my groups",
@@ -36,98 +33,99 @@ export class ModuleService {
         }
     }
 
-    async createModule(data) {
+    async createGroup(data , authUser) {
         try {
-            const createdModule = await Module.create(data);
-            return createdModule;
+            
+            const createdGroup = await Group.create(data);
+            return createdGroup;
         } catch (error) {
             throw new ErrorClass(
-                "Failed to create module",
+                "Failed to create group",
                 500,
                 error.message,
-                "moduleService.createModule"
+                "moduleService.createGroup"
             );
         }
     }
 
-    async updateModule(id, data) {
+    async updateGroup(id, data) {
         try {
             if (!mongoose.isValidObjectId(id)) {
                 throw new ErrorClass("Invalid ID format", 400);
             }
-            const updatedModule = await Module.findByIdAndUpdate(id, data, {
+            const updatedGroup = await Group.findByIdAndUpdate(id, data, {
                 new: true,
             });
-            if (!updatedModule) throw new ErrorClass("Cannot find this module", 404);
-            return updatedModule;
+            if (!updatedGroup) throw new ErrorClass("Cannot find this Group", 404);
+            return updatedGroup;
         } catch (error) {
             throw new ErrorClass(
-                "Failed to update module",
+                "Failed to update Group",
                 500,
                 error.message,
-                "moduleService.updateModule"
+                "GroupService.updateGroup"
             );
         }
     }
 
-    async softDeleteModule(id) {
+    async softDeleteGroup(id) {
         try {
             if (!mongoose.isValidObjectId(id)) {
                 throw new ErrorClass("Invalid ID format", 400);
             }
-            const updatedModule = await Module.findByIdAndUpdate(
+            const updatedGroup = await Group.findByIdAndUpdate(
                 id,
                 { isArchived: true },
                 { new: true }
             );
-            if (!updatedModule) throw new ErrorClass("Cannot find this module", 404);
-            return updatedModule;
+            if (!updatedGroup) throw new ErrorClass("Cannot find this Group", 404);
+            return updatedGroup;
         } catch (error) {
             throw new ErrorClass(
-                "Failed to update module",
+                "Failed to update Group",
                 500,
                 error.message,
-                "moduleService.softDeleteModule"
+                "GroupService.softDeleteGroup"
             );
         }
     }
 
-    async restoreModule(id) {
+    async restoreGroup(id) {
         try {
             if (!mongoose.isValidObjectId(id)) {
                 throw new ErrorClass("Invalid ID format", 400);
             }
-            const restoredModule = await Module.findByIdAndUpdate(
+            const restoredGroup = await Group.findByIdAndUpdate(
                 id,
                 { isArchived: false },
                 { new: true }
             );
-            if (!restoredModule) throw new ErrorClass("Cannot find this module", 404);
-            return restoredModule;
+            if (!restoredGroup) throw new ErrorClass("Cannot find this Group", 404);
+            return restoredGroup;
         } catch (error) {
             throw new ErrorClass(
-                "Failed to restore module",
+                "Failed to restore Group",
                 500,
                 error.message,
-                "moduleService.restoreModule"
+                "GroupService.restoreGroup"
             );
         }
     }
 
-    async deleteModule(id) {
+    async deleteGroup(id) {
         try {
             if (!mongoose.isValidObjectId(id)) {
                 throw new ErrorClass("Invalid ID format", 400);
             }
-            const deletedModule = await Module.findByIdAndDelete(id);
-            if (!deletedModule) throw new ErrorClass("Cannot find this module", 404);
-            return deletedModule;
+            const deletedGroup = await Group.findByIdAndDelete(id);
+            if (!deletedGroup) throw new ErrorClass("Cannot find this Group", 404);
+            return deletedGroup;
         } catch (error) {
             throw new ErrorClass(
-                "Failed to delete module",
+                "Failed to delete Group",
                 500,
                 error.message,
-                "moduleService.deleteModule"
+                "GroupService.deleteGroup"
             );
         }
     }
