@@ -1,8 +1,6 @@
 import Joi from "joi";
 import mongoose from "mongoose";
 import User from "../../models/user.model.js"
-import Announcement from "../../models/announcement.model.js"
-import Module from "../../models/module.model.js"
 
 const objectId = (value, helpers) => {
   if (!mongoose.Types.ObjectId.isValid(value)) {
@@ -10,13 +8,12 @@ const objectId = (value, helpers) => {
   }
   return value;
 };
- 
+
 const existsInModel = (Model, fieldName = "id") =>
-  async (value, helpers) => {
+  async (value) => {
+    if (!value) return value; // skip if undefined
     const exists = await Model.exists({ _id: value });
-    if (!exists) {
-      return helpers.error("any.notFound", { field: fieldName });
-    }
+    if (!exists) throw new Error(`${fieldName} not found`);
     return value;
   };
 
@@ -27,25 +24,9 @@ export const createGroupSchema = Joi.object({
   coverUrl: Joi.string().uri().optional(),
 
   owner: Joi.string()
-    .custom(objectId)
-    .external(existsInModel(User, "owner"))
-    .required(),
+    .custom(objectId) // sync ObjectId validation
+    .external(existsInModel(User, "Owner")),
 
-  announcement: Joi.array()
-    .items(
-      Joi.string()
-        .custom(objectId)
-        .external(existsInModel(Announcement, "announcement"))
-    )
-    .optional(),
-
-  modules: Joi.array()
-    .items(
-      Joi.string()
-        .custom(objectId)
-        .external(existsInModel(Module, "module"))
-    )
-    .optional(),
 
   isArchived: Joi.boolean().optional(),
 });
@@ -57,18 +38,6 @@ export const updateGroupSchema = Joi.object({
   owner: Joi.string()
     .custom(objectId)
     .external(existsInModel(User, "owner")),
-
-  announcement: Joi.array().items(
-    Joi.string()
-      .custom(objectId)
-      .external(existsInModel(Announcement, "announcement"))
-  ),
-
-  modules: Joi.array().items(
-    Joi.string()
-      .custom(objectId)
-      .external(existsInModel(Module, "module"))
-  ),
 
   isArchived: Joi.boolean(),
 }).min(1);

@@ -11,21 +11,32 @@ export class GroupController {
       next(error);
     }
   }
+ async getGroupById(req, res, next) {
+  try {
+    const group = await groupService.getGroupById(req.params.id, req.authUser._id);
+    res.json({ success: true, data: group });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+
+
 
   async getMyGroups(req, res, next) {
     try {
-      const userId = req.authUser._id;
-      const myGroups = await groupService.getMyGroups(userId);
-      res.status(200).json({ success: true, data: myGroups });
+      const groups = await groupService.getMyGroups(req.authUser._id);
+      res.json({ success: true, groups });
     } catch (error) {
       next(error);
     }
   }
 
+
   async createGroup(req, res, next) {
     try {
-
-      const createdGroup = await groupService.createGroup(req.body , req.authUser);
+      const createdGroup = await groupService.createGroup(req.body, req.authUser);
       res.status(201).json({ success: true, data: createdGroup });
     } catch (error) {
       next(error);
@@ -36,7 +47,8 @@ export class GroupController {
     try {
       const updatedGroup = await groupService.updateGroup(
         req.params.id,
-        req.body
+        req.body,
+        req.authUser
       );
       res.status(200).json({ success: true, data: updatedGroup });
     } catch (error) {

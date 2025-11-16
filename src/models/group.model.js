@@ -6,14 +6,8 @@ const groupSchema = new mongoose.Schema(
     title: { type: String, required: true },
     coverUrl: String,
     owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    announcement: [
-      { type: mongoose.Schema.Types.ObjectId, ref: "Announcement" },
-    ],
-    modules: [{ type: mongoose.Schema.Types.ObjectId, ref: "Module" }],
     inviteCode: { type: String },
     inviteExpiredAt: Date,
-    members: Number,
-    modules: Number,
     isArchived: { type: Boolean, default: false },
   },
   { timestamps: true }
