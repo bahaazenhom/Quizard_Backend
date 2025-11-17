@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const groupMemberSchema = new mongoose.Schema({
   group: { type: mongoose.Schema.Types.ObjectId, ref: "Group", required: true },
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -6,8 +7,8 @@ const groupMemberSchema = new mongoose.Schema({
   joinedAt: { type: Date, default: Date.now },
 });
 
-groupMemberSchema.index({ group: 1 }, { unique: true });
-groupMemberSchema.index({ user: 1 }, { unique: true });
+groupMemberSchema.index({ group: 1 });
+groupMemberSchema.index({ user: 1 });
 
 export default mongoose.models.GroupMember ||
   mongoose.model("GroupMember", groupMemberSchema);
