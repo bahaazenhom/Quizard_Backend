@@ -5,6 +5,7 @@ import {
   verifyAccessToken,
 } from "../../utils/jwt.util.js";
 import { log } from "console";
+import { cloudinaryConfig } from "../../config/cloudinary.config.js";
 const userService = new UserService();
 
 export class UserController {
@@ -189,7 +190,6 @@ export class UserController {
   async updateProfilePhoto(req, res, next) {
     try {
       const userId = req.authUser._id;
-
       // Check if file was uploaded
       if (!req.file) {
         return res.status(400).json({
@@ -197,12 +197,12 @@ export class UserController {
           message: "Photo file is required",
         });
       }
-
-      // Create the photo URL from the uploaded file path
-      // Adjust based on your server configuration
-      const photoURL = `/uploads/profiles/${req.file.filename}`;
-      // Or with domain: `${process.env.BASE_URL}/uploads/profiles/${req.file.filename}`
-
+      const data = await cloudinaryConfig().uploader.upload(req.file.path, {
+        folder: "profile_photos",
+        resource_type: "image",
+        use_filename: true,
+      });
+      const photoURL = data.secure_url;
       const user = await UserProfileService.updateProfilePhoto(
         userId,
         photoURL

@@ -5,9 +5,9 @@ import { auth } from "../../middlewares/authentication.middleware.js";
 import { systemRoles } from "../../utils/system-roles.util.js";
 import { authorization } from "../../middlewares/authorization.middleware.js";
 import {
-  handleMulterError,
-  uploadProfilePhoto,
-} from "../../config/multer.config.js";
+  multerHostMiddleware,
+  multerMiddleware,
+} from "../../middlewares/multer.middleware.js";
 
 const router = Router();
 const userController = new UserController();
@@ -24,8 +24,7 @@ router.put("/password", auth(), userController.changePassword);
 router.put(
   "/photo",
   auth(),
-  uploadProfilePhoto,
-  handleMulterError,
+  multerHostMiddleware("userProfile", ["jpg", "jpeg", "png"]).single("image"),
   userController.updateProfilePhoto
 );
 router.get("/stats", auth(), userController.getUserStats);
