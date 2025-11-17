@@ -23,12 +23,14 @@ export class GroupService {
 
     async getGroupById(groupId, userId) {
         try {
+            console.log(userId)
             // 1️⃣ Check if the user is a member of this group
             const membership = await GroupMember.findOne({
                 group: groupId,
                 user: userId,
             });
-
+            console.log(membership)
+            const role = membership.role
             if (!membership) {
                 throw new ErrorClass(
                     "You are not a member of this group",
@@ -42,7 +44,7 @@ export class GroupService {
                 throw new ErrorClass("Cannot get group", 404);
             }
 
-            return group;
+            return { group, role };
         } catch (error) {
             if (error instanceof ErrorClass) throw error;
 
@@ -55,55 +57,55 @@ export class GroupService {
         }
     }
 
-   async getMyGroups(userId) {
-    try {
-        const memberships = await GroupMember.find({ user: userId })
-            .populate({
-                path: "group",
-                select: "title owner inviteCode coverUrl",
-            });
+    async getMyGroups(userId) {
+        try {
+            const memberships = await GroupMember.find({ user: userId })
+                .populate({
+                    path: "group",
+                    select: "title owner inviteCode coverUrl",
+                });
 
-        if (memberships.length === 0) return [];
+            if (memberships.length === 0) return [];
 
-        const data = await Promise.all(
-            memberships.map(async (membership) => {
-                const group = membership.group;
+            const data = await Promise.all(
+                memberships.map(async (membership) => {
+                    const group = membership.group;
 
-                if (!group) {
-                    const obj = membership.toObject();
-                    delete obj.user;
-                    return obj;
-                }
+                    if (!group) {
+                        const obj = membership.toObject();
+                        delete obj.user;
+                        return obj;
+                    }
 
-                const membersCount = await GroupMember.countDocuments({ group: group._id });
-                const modulesCount = await Module.countDocuments({ groupId: group._id });
+                    const membersCount = await GroupMember.countDocuments({ group: group._id });
+                    const modulesCount = await Module.countDocuments({ groupId: group._id });
 
-                // Convert to object & remove user field
-                const membershipObj = membership.toObject();
-                delete membershipObj.user;
+                    // Convert to object & remove user field
+                    const membershipObj = membership.toObject();
+                    delete membershipObj.user;
 
-                return {
-                    ...membershipObj,
-                    group: {
-                        ...group.toObject(),
-                        membersCount,
-                        modulesCount,
-                    },
-                };
-            })
-        );
+                    return {
+                        ...membershipObj,
+                        group: {
+                            ...group.toObject(),
+                            membersCount,
+                            modulesCount,
+                        },
+                    };
+                })
+            );
 
-        return data;
+            return data;
 
-    } catch (error) {
-        throw new ErrorClass(
-            "Failed to fetch user groups",
-            500,
-            error.message,
-            "GroupService.getMyGroups"
-        );
+        } catch (error) {
+            throw new ErrorClass(
+                "Failed to fetch user groups",
+                500,
+                error.message,
+                "GroupService.getMyGroups"
+            );
+        }
     }
-}
 
 
     async createGroup(data, authUser) {
