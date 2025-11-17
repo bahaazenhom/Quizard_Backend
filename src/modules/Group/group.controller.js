@@ -11,19 +11,14 @@ export class GroupController {
       next(error);
     }
   }
- async getGroupById(req, res, next) {
-  try {
-    const group = await groupService.getGroupById(req.params.id, req.authUser._id);
-    res.json({ success: true, data: group });
-  } catch (error) {
-    next(error);
+  async getGroupById(req, res, next) {
+    try {
+      const group = await groupService.getGroupById(req.params.id, req.authUser._id);
+      res.json({ success: true, data: group });
+    } catch (error) {
+      next(error);
+    }
   }
-}
-
-
-
-
-
   async getMyGroups(req, res, next) {
     try {
       const groups = await groupService.getMyGroups(req.authUser._id);
@@ -32,7 +27,6 @@ export class GroupController {
       next(error);
     }
   }
-
 
   async createGroup(req, res, next) {
     try {

@@ -12,8 +12,8 @@ const router = Router();
 const groupController = new GroupController();
 
 router.get("/", auth(), authorization(systemRoles.ADMIN), errorHandler(groupController.getGroup));
-router.get("/:id", auth(), errorHandler(groupController.getGroupById));
 router.get("/me", auth(), errorHandler(groupController.getMyGroups));
+router.get("/:id", auth(), errorHandler(groupController.getGroupById));
 
 router.post("/", auth(), validate(createGroupSchema), errorHandler(groupController.createGroup));
 router.patch("/:id", auth(), validate(updateGroupSchema), errorHandler(groupController.updateGroup));
