@@ -36,7 +36,7 @@ export class GroupService {
             }
 
             // 2️⃣ Fetch the group
-            const group = await Group.findById(groupId).select("-_id");
+            const group = await Group.findById(groupId);
             if (!group) {
                 throw new ErrorClass("Cannot get group", 404);
             }
@@ -55,7 +55,7 @@ export class GroupService {
 
     async getMyGroups(userId) {
         try {
-            const memberships = await GroupMember.find({ user: userId })
+            const memberships = await GroupMember.find({ user: userId }).select("-_id")
                 .populate({
                     path: "group",
                     select: "title owner inviteCode coverUrl",
@@ -109,7 +109,6 @@ export class GroupService {
             );
         }
     }
-
 
     async createGroup(data, authUser) {
         try {
@@ -208,6 +207,7 @@ export class GroupService {
                 throw new ErrorClass("Invalid ID format", 400);
             }
             const deletedGroup = await Group.findByIdAndDelete(id);
+            await GroupMember.deleteMany({ group: id });
             if (!deletedGroup) throw new ErrorClass("Cannot find this Group", 404);
             return deletedGroup;
         } catch (error) {
