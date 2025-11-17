@@ -30,7 +30,7 @@ export class GroupService {
                 user: userId,
             });
             console.log(membership)
-            const role = membership.role
+            const role = membership?.role
             if (!membership) {
                 throw new ErrorClass(
                     "You are not a member of this group",
