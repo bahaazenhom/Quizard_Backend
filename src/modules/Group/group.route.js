@@ -20,8 +20,8 @@ router.post("/join", auth(), errorHandler(groupController.joinGroup));
 router.patch("/:id", auth(), validate(updateGroupSchema), errorHandler(groupController.updateGroup));
 
 router.delete("/:id/hard", auth(), errorHandler(groupController.deleteGroup));
-router.delete("/:id", auth(), authorization(systemRoles.ADMIN), errorHandler(groupController.deleteGroup));
+router.delete("/:id", auth(), errorHandler(groupController.deleteGroup));
 
-router.patch("/:id/restore", auth(), authorization(systemRoles.ADMIN), errorHandler(groupController.restoreGroup));
+router.patch("/:id/restore", auth(), errorHandler(groupController.restoreGroup));
 
 export default router;

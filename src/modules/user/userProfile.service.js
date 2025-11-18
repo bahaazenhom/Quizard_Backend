@@ -130,14 +130,20 @@ class UserProfileService {
     }
 
     const user = await User.findById(userId)
-      .select("teachingCourses enrolledCourses")
-      .lean();
+      .select("teachingCourses enrolledCourses currentSubscription")
+      .populate({
+        path: "currentSubscription",
+        options: { virtuals: true }
+      })
+      .lean({ virtuals: true });
+
 
     if (!user) {
       throw new Error("User not found");
     }
 
     return {
+      currentCredit: user.currentSubscription?.creditsRemaining   ,
       teachingCourses: user.teachingCourses || 0,
       enrolledCourses: user.enrolledCourses || 0,
     };
