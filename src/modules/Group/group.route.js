@@ -2,26 +2,55 @@ import { Router } from "express";
 import { GroupController } from "./group.controller.js";
 import { errorHandler } from "../../middlewares/globalErrorHandler.middleware.js";
 import { validate } from "../../middlewares/validation.middleware.js";
-import { createGroupSchema, updateGroupSchema } from './group.validation.js';
-import { auth } from './../../middlewares/authentication.middleware.js';
+import {
+  createGroupSchema,
+  updateGroupSchema,
+  leaveGroupSchema,
+} from "./group.validation.js";
+import { auth } from "./../../middlewares/authentication.middleware.js";
 import { systemRoles } from "../../utils/system-roles.util.js";
 import { authorization } from "../../middlewares/authorization.middleware.js";
-
 
 const router = Router();
 const groupController = new GroupController();
 
-router.get("/", auth(), authorization(systemRoles.ADMIN), errorHandler(groupController.getGroup));
+router.get(
+  "/",
+  auth(),
+  authorization(systemRoles.ADMIN),
+  errorHandler(groupController.getGroup)
+);
 router.get("/me", auth(), errorHandler(groupController.getMyGroups));
 router.get("/:id", auth(), errorHandler(groupController.getGroupById));
 
-router.post("/", auth(), validate(createGroupSchema), errorHandler(groupController.createGroup));
+router.post(
+  "/",
+  auth(),
+  validate(createGroupSchema),
+  errorHandler(groupController.createGroup)
+);
 router.post("/join", auth(), errorHandler(groupController.joinGroup));
-router.patch("/:id", auth(), validate(updateGroupSchema), errorHandler(groupController.updateGroup));
+router.patch(
+  "/:id",
+  auth(),
+  validate(updateGroupSchema),
+  errorHandler(groupController.updateGroup)
+);
 
 router.delete("/:id/hard", auth(), errorHandler(groupController.deleteGroup));
 router.delete("/:id", auth(), errorHandler(groupController.deleteGroup));
 
-router.patch("/:id/restore", auth(), errorHandler(groupController.restoreGroup));
+router.delete(
+  "/:id/leave",
+  auth(),
+  validate(leaveGroupSchema),
+  errorHandler(groupController.leaveGroup)
+);
+
+router.patch(
+  "/:id/restore",
+  auth(),
+  errorHandler(groupController.restoreGroup)
+);
 
 export default router;
