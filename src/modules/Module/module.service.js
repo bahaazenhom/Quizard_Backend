@@ -7,7 +7,6 @@ export class ModuleService {
     // CREATE
     async createModule(title, groupId) {
         try {
-            console.log(groupId)
             const groupExists = await Group.findById(groupId);
             if (!groupExists)
                 throw new ErrorClass("Group not found", 404);
