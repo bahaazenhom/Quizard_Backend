@@ -32,3 +32,47 @@ export const sendVerificationEmail = async (to, userName, confirmationLink) => {
     throw error;
   }
 };
+
+export const sendPaymentConfirmationEmail = async (
+  to,
+  userName,
+  planName,
+  startDate,
+  endDate
+) => {
+  try {
+    if (!process.env.SENDGRID_API_KEY) {
+      throw new Error("Missing SENDGRID_API_KEY environment variable");
+    }
+
+    if (!process.env.SENDGRID_VERIFIED_SENDER_EMAIL) {
+      throw new Error(
+        "Missing SENDGRID_VERIFIED_SENDER_EMAIL environment variable"
+      );
+    }
+
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const msg = {
+      to,
+      from: {
+        email: process.env.SENDGRID_VERIFIED_SENDER_EMAIL,
+        name: "Quizard Support",
+      },
+      subject: "Subscription Confirmed",
+      templateId: process.env.PAYMENT_TEMPLATE_ID, // create a SendGrid dynamic template
+      dynamicTemplateData: {
+        name: userName,
+        plan: planName,
+        start_date: startDate.toDateString(),
+        end_date: endDate.toDateString(),
+      },
+    };
+
+    await sgMail.send(msg);
+    console.log(`Payment confirmation email sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending payment confirmation email:", error);
+    throw error;
+  }
+};

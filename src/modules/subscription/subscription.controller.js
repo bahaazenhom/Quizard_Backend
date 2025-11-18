@@ -3,7 +3,7 @@ import { UserService } from "../user/user.service.js";
 import { SubscriptionService } from "./subscription.service.js";
 import Plan from "../../models/plan.model.js";
 import { ErrorClass } from "../../utils/errorClass.util.js";
-
+import { sendPaymentConfirmationEmail } from "../../utils/mail.util.js";
 const subscriptionService = new SubscriptionService();
 
 export class SubscriptionController {
@@ -86,7 +86,6 @@ export class SubscriptionController {
         const { userId, planId } = stripeSubscription.metadata;
 
         const plan = await Plan.findById(planId);
-
         const startDate = new Date(
           stripeSubscription.current_period_start * 1000
         );
@@ -106,6 +105,20 @@ export class SubscriptionController {
         await UserService.updateUser(userId, {
           currentSubscription: newSub._id,
         });
+
+        // Send payment confirmation email
+        try {
+          const user = await UserService.getUserById(userId);
+          await sendPaymentConfirmationEmail(
+            user.email,
+            user.fullName,
+            plan.name,
+            startDate,
+            endDate
+          );
+        } catch (err) {
+          console.error("Failed to send payment confirmation email:", err);
+        }
       };
 
       // ----------------------------
