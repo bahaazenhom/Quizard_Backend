@@ -22,7 +22,7 @@ export class GroupController {
   async getMyGroups(req, res, next) {
     try {
       const groups = await groupService.getMyGroups(req.authUser._id);
-      res.json({ success: true, groups });
+      res.json({ success: true,data: groups });
     } catch (error) {
       next(error);
     }

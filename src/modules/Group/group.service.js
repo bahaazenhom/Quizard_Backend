@@ -23,12 +23,11 @@ export class GroupService {
 
     async getGroupById(groupId, userId) {
         try {
-            // 1️⃣ Check if the user is a member of this group
             const membership = await GroupMember.findOne({
                 group: groupId,
                 user: userId,
             });
-
+            const role = membership?.role
             if (!membership) {
                 throw new ErrorClass(
                     "You are not a member of this group",
@@ -41,8 +40,7 @@ export class GroupService {
             if (!group) {
                 throw new ErrorClass("Cannot get group", 404);
             }
-
-            return group;
+            return { group, role };
         } catch (error) {
             if (error instanceof ErrorClass) throw error;
 
@@ -57,23 +55,34 @@ export class GroupService {
 
     async getMyGroups(userId) {
         try {
-            const memberships = await GroupMember.find({ user: userId })
+            const memberships = await GroupMember.find({ user: userId }).select("-_id")
                 .populate({
                     path: "group",
                     select: "title owner inviteCode coverUrl",
-                });
+                    populate: {
+                        path: "owner",
+                        select: "firstName lastName"
+                    }
+                })
+         
+
 
             if (memberships.length === 0) return [];
 
             const data = await Promise.all(
                 memberships.map(async (membership) => {
                     const group = membership.group;
-
-                    if (!group) return { ...membership.toObject(), user: undefined };
+                    console.log(group)
+                    if (!group) {
+                        const obj = membership.toObject();
+                        delete obj.user;
+                        return obj;
+                    }
 
                     const membersCount = await GroupMember.countDocuments({ group: group._id });
                     const modulesCount = await Module.countDocuments({ groupId: group._id });
 
+                    // Convert to object & remove user field
                     const membershipObj = membership.toObject();
                     delete membershipObj.user;
 
@@ -83,12 +92,14 @@ export class GroupService {
                             ...group.toObject(),
                             membersCount,
                             modulesCount,
+                            
                         },
                     };
                 })
             );
 
             return data;
+
         } catch (error) {
             throw new ErrorClass(
                 "Failed to fetch user groups",
@@ -196,6 +207,7 @@ export class GroupService {
                 throw new ErrorClass("Invalid ID format", 400);
             }
             const deletedGroup = await Group.findByIdAndDelete(id);
+            await GroupMember.deleteMany({ group: id });
             if (!deletedGroup) throw new ErrorClass("Cannot find this Group", 404);
             return deletedGroup;
         } catch (error) {

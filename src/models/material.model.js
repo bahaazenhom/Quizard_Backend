@@ -5,6 +5,7 @@ const materialSchema = new mongoose.Schema(
     title: String,
     type: { type: String, enum: ["pdf", "video", "link"], required: true },
     url: String,
+    module: { type: mongoose.Schema.Types.ObjectId, ref: "Module" }
   },
   { timestamps: true }
 );
