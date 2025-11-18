@@ -4,11 +4,6 @@ import { SubscriptionController } from "./subscription.controller.js";
 
 const router = express.Router();
 const subscriptionController = new SubscriptionController();
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }), // Captures raw body as Buffer
-  subscriptionController.handleStripeWebhook.bind(subscriptionController)
-);
 
 // Other routes with JSON parsing
 router.post(

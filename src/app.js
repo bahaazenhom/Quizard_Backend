@@ -5,7 +5,8 @@ import userRouter from "./modules/user/user.route.js";
 import groupRouter from "./modules/Group/group.route.js";
 import subscriptionRouter from "./modules/subscription/subscription.route.js";
 import cors from "cors";
-
+import { SubscriptionController } from "./modules/subscription/subscription.controller.js";
+const subscriptionController = new SubscriptionController();
 const app = express();
 
 app.use(
@@ -17,6 +18,13 @@ app.use(
     credentials: true,
   })
 );
+
+app.post(
+  "/api/v1/subscriptions/webhook",
+  express.raw({ type: "application/json" }),
+  subscriptionController.handleStripeWebhook.bind(subscriptionController)
+);
+
 app.use(express.json());
 // Define your routes here
 app.use("/api/v1/users", userRouter);
