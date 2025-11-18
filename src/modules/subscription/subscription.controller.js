@@ -1,49 +1,72 @@
 import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 import { UserService } from "../user/user.service.js";
 import { SubscriptionService } from "./subscription.service.js";
 import Plan from "../../models/plan.model.js";
+import { ErrorClass } from "../../utils/errorClass.util.js";
+
 const subscriptionService = new SubscriptionService();
 
 export class SubscriptionController {
+  // ------------------------------------------------------
+  // 1) Create Checkout Session
+  // ------------------------------------------------------
   async createCheckoutSession(req, res, next) {
     try {
       const { planId } = req.body;
       const user = req.authUser;
 
       const plan = await Plan.findById(planId);
-      if (!plan) return res.status(404).json({ message: "Plan not found" });
+      if (!plan)
+        return next(
+          new ErrorClass("Plan not found", 404, null, "createCheckoutSession")
+        );
 
       if (!plan.stripePriceId)
-        return res.status(400).json({ message: "Plan missing Stripe priceId" });
+        return next(
+          new ErrorClass(
+            "Plan missing Stripe priceId",
+            400,
+            planId,
+            "createCheckoutSession"
+          )
+        );
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer_email: user.email,
-        line_items: [
-          {
-            price: plan.stripePriceId,
-            quantity: 1,
-          },
-        ],
+        line_items: [{ price: plan.stripePriceId, quantity: 1 }],
         success_url: `${process.env.CLIENT_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.CLIENT_URL}/subscription/cancel`,
-        metadata: { userId: user._id },
+        metadata: { userId: user._id.toString(), planId: plan._id.toString() },
         subscription_data: {
-          metadata: { userId: user._id },
+          metadata: {
+            userId: user._id.toString(),
+            planId: plan._id.toString(),
+          },
         },
       });
 
       return res.json({ url: session.url });
     } catch (error) {
       next(
-        new ClassError("Failed to create checkout session: " + error.message)
+        new ErrorClass(
+          "Failed to create checkout session",
+          500,
+          error.message,
+          "createCheckoutSession"
+        )
       );
     }
   }
 
+  // ------------------------------------------------------
+  // 2) Handle Webhook
+  // ------------------------------------------------------
   async handleStripeWebhook(req, res) {
     let event;
+
     try {
       const signature = req.headers["stripe-signature"];
 
@@ -53,73 +76,111 @@ export class SubscriptionController {
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
-      console.log("Webhook signature error:", err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      return next(
+        new ErrorClass(err.message, 500, null, "Webhook processing error")
+      );
     }
 
     try {
-      // ---- Extracted common logic into reusable function ----
+      // Reusable logic for creation + renewal
       const processSubscription = async (stripeSubscription) => {
-        const userId = stripeSubscription.metadata.userId;
+        const { userId, planId } = stripeSubscription.metadata;
 
-        // find plan linked with this stripe price
-        const plan = await Plan.findOne({
-          stripePriceId: stripeSubscription.items.data[0].price.id,
-        });
+        const plan = await Plan.findById(planId);
 
-        // create local subscription in DB
-        const newSub = await subscriptionService.createSubscription({
+        const startDate = new Date(
+          stripeSubscription.current_period_start * 1000
+        );
+        const endDate = new Date(stripeSubscription.current_period_end * 1000);
+
+        // Create or update subscription
+        const newSub = await subscriptionService.createOrUpdateSubscription({
           user: userId,
-          plan: plan._id,
-          startDate: new Date(stripeSubscription.current_period_start * 1000),
-          endDate: new Date(stripeSubscription.current_period_end * 1000),
+          plan: planId,
+          startDate,
+          endDate,
           creditsAllocated: plan.credits,
+          stripeSubscriptionId: stripeSubscription.id,
         });
 
-        // link this subscription to the user
+        // Link subscription to user
         await UserService.updateUser(userId, {
           currentSubscription: newSub._id,
         });
       };
 
-      // ----------------------------------
-      //          HANDLE EVENT TYPES
-      // ----------------------------------
+      // ----------------------------
+      //        EVENT SWITCH
+      // ----------------------------
 
       switch (event.type) {
-        case "customer.subscription.created": {
+        case "customer.subscription.created":
           await processSubscription(event.data.object);
           break;
-        }
 
         case "invoice.payment_succeeded": {
           const invoice = event.data.object;
-
-          // fetch full subscription to access metadata
           const subscription = await stripe.subscriptions.retrieve(
             invoice.subscription
           );
-
           await processSubscription(subscription);
           break;
         }
 
         case "customer.subscription.deleted": {
-          const subscription = event.data.object;
-          const userId = subscription.metadata.userId;
+          const sub = event.data.object;
+          const userId = sub.metadata.userId;
 
-          await User.findByIdAndUpdate(userId, {
-            currentSubscription: null,
-          });
-
+          await UserService.updateUser(userId, { currentSubscription: null });
+          await subscriptionService.deactivateSubscription(userId);
           break;
         }
       }
 
       return res.json({ received: true });
     } catch (err) {
-      console.log("Webhook error:", err);
-      return res.status(500).send("Webhook processing error");
+      return next(
+        new ErrorClass(
+          "Webhook processing error",
+          500,
+          null,
+          "Webhook processing error"
+        )
+      );
+    }
+  }
+
+  // ------------------------------------------------------
+  // 3) Get My Subscription
+  // ------------------------------------------------------
+  async getMySubscription(req, res, next) {
+    try {
+      const userId = req.authUser._id;
+
+      const subscription = await subscriptionService.getSubscriptionByUserId(
+        userId
+      );
+
+      if (!subscription)
+        return next(
+          new ErrorClass(
+            "No active subscription found",
+            404,
+            null,
+            "getMySubscription"
+          )
+        );
+
+      return res.json({ subscription });
+    } catch (error) {
+      next(
+        new ErrorClass(
+          "Failed to get subscription",
+          500,
+          error.message,
+          "getMySubscription"
+        )
+      );
     }
   }
 }

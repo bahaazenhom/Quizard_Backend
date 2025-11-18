@@ -3,6 +3,7 @@ import { globalResponse } from "./middlewares/globalErrorHandler.middleware.js";
 import planRouter from "./modules/plan/plan.router.js";
 import userRouter from "./modules/user/user.route.js";
 import groupRouter from "./modules/Group/group.route.js";
+import subscriptionRouter from "./modules/subscription/subscription.route.js";
 import cors from "cors";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/groups", groupRouter);
 app.use("/api/v1/plans", planRouter);
+app.use("/api/v1/subscriptions", subscriptionRouter);
 // global error handler
 app.use(globalResponse);
 

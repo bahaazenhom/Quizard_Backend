@@ -1,34 +1,34 @@
 import Subscription from "../../models/subscription.model.js";
 
 export class SubscriptionService {
-  async createSubscription(subscriptionData) {
+  async createOrUpdateSubscription(data) {
     try {
-      const subscription = new Subscription(subscriptionData);
-      await subscription.save();
-      return subscription;
+      return await Subscription.findOneAndUpdate(
+        { user: data.user },
+        { $set: data },
+        { new: true, upsert: true }
+      );
     } catch (error) {
-      throw new Error("Failed to create subscription: " + error.message);
+      throw new Error("Failed to create/update subscription: " + error.message);
     }
   }
 
   async getSubscriptionByUserId(userId) {
     try {
-      const subscription = await Subscription.findOne({ userId });
-      return subscription;
+      return await Subscription.findOne({ user: userId });
     } catch (error) {
       throw new Error("Failed to get subscription: " + error.message);
     }
   }
-  async updateSubscription(userId, updateData) {
+
+  async deactivateSubscription(userId) {
     try {
-      const updatedSubscription = await Subscription.findOneAndUpdate(
-        { userId },
-        { $set: updateData },
-        { new: true }
+      return await Subscription.findOneAndUpdate(
+        { user: userId },
+        { $set: { isActive: false } }
       );
-      return updatedSubscription;
     } catch (error) {
-      throw new Error("Failed to update subscription: " + error.message);
+      throw new Error("Failed to deactivate subscription: " + error.message);
     }
   }
 }
