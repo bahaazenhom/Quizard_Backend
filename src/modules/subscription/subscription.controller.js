@@ -124,6 +124,7 @@ export class SubscriptionController {
       // ----------------------------
       //        EVENT SWITCH
       // ----------------------------
+      console.log("------->" + event.type);
 
       switch (event.type) {
         case "customer.subscription.created":
