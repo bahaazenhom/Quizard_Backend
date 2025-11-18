@@ -62,12 +62,14 @@ export class SubscriptionController {
   // ------------------------------------------------------
   // 2) Handle Webhook
   // ------------------------------------------------------
-  async handleStripeWebhook(req, res) {
+  async handleStripeWebhook(req, res, next) {
+    // Added 'next' for error handling
     let event;
+    const stripe = getStripe(); // Initialize Stripe instance here
+
     console.log("i am in webhook");
-    console.log("1------->" + event.type);
+
     try {
-      console.log("1------->" + event.type);
       const signature = req.headers["stripe-signature"];
 
       event = stripe.webhooks.constructEvent(
@@ -76,17 +78,36 @@ export class SubscriptionController {
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
+      // It's good to log the error for debugging purposes
+      console.error("Stripe webhook construction error:", err);
       return next(
-        new ErrorClass(err.message, 500, null, "Webhook processing error")
+        new ErrorClass(
+          err.message,
+          500,
+          null,
+          "Webhook signature verification error"
+        ) // More specific message
       );
     }
-    console.log("1------->" + event.type);
+
+    // Now 'event' is guaranteed to be defined if the try block succeeded
+    console.log("Stripe event type:", event.type);
+
     try {
       // Reusable logic for creation + renewal
       const processSubscription = async (stripeSubscription) => {
         const { userId, planId } = stripeSubscription.metadata;
 
+        // Ensure userId and planId exist before proceeding
+        if (!userId || !planId) {
+          throw new Error("Missing userId or planId in subscription metadata.");
+        }
+
         const plan = await Plan.findById(planId);
+        if (!plan) {
+          throw new Error(`Plan with ID ${planId} not found.`);
+        }
+
         const startDate = new Date(
           stripeSubscription.current_period_start * 1000
         );
@@ -110,33 +131,55 @@ export class SubscriptionController {
         // Send payment confirmation email
         try {
           const user = await userService.getUserById(userId);
-          await sendPaymentConfirmationEmail(
-            user.email,
-            user.fullName,
-            plan.name,
-            startDate,
-            endDate
-          );
+          if (user) {
+            await sendPaymentConfirmationEmail(
+              user.email,
+              user.fullName,
+              plan.name,
+              startDate,
+              endDate
+            );
+          } else {
+            console.warn(
+              `User with ID ${userId} not found for email confirmation.`
+            );
+          }
         } catch (err) {
           console.error("Failed to send payment confirmation email:", err);
+          // Decide if email sending failure should halt the webhook process
+          // For now, it just logs and continues.
         }
       };
-      console.log("2------->" + event.type);
+
+      console.log("Processing event of type:", event.type);
       // ----------------------------
       //        EVENT SWITCH
       // ----------------------------
 
       switch (event.type) {
         case "customer.subscription.created":
-          await processSubscription(event.data.object);
+          // Ensure the subscription object is available
+          if (event.data.object) {
+            await processSubscription(event.data.object);
+          } else {
+            console.warn(
+              "customer.subscription.created event missing data.object"
+            );
+          }
           break;
 
         case "invoice.payment_succeeded": {
           const invoice = event.data.object;
-          const subscription = await stripe.subscriptions.retrieve(
-            invoice.subscription
-          );
-          await processSubscription(subscription);
+          if (invoice && invoice.subscription) {
+            const subscription = await stripe.subscriptions.retrieve(
+              invoice.subscription
+            );
+            await processSubscription(subscription);
+          } else {
+            console.warn(
+              "invoice.payment_succeeded event missing invoice or subscription ID"
+            );
+          }
           break;
         }
 
@@ -144,20 +187,30 @@ export class SubscriptionController {
           const sub = event.data.object;
           const userId = sub.metadata.userId;
 
-          await userService.updateUser(userId, { currentSubscription: null });
-          await subscriptionService.deactivateSubscription(userId);
+          if (userId) {
+            await userService.updateUser(userId, { currentSubscription: null });
+            await subscriptionService.deactivateSubscription(userId);
+          } else {
+            console.warn(
+              "customer.subscription.deleted event missing userId in metadata"
+            );
+          }
           break;
         }
+        // Handle other event types if necessary, or log them
+        default:
+          console.log(`Unhandled event type ${event.type}`);
       }
 
       return res.json({ received: true });
     } catch (err) {
+      console.error("Error processing Stripe webhook event:", err);
       return next(
         new ErrorClass(
           "Webhook processing error",
           500,
           null,
-          "Webhook processing error"
+          "An error occurred while processing the webhook event."
         )
       );
     }

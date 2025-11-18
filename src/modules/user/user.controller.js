@@ -1,3 +1,4 @@
+import moment from "moment";
 import { UserService } from "./user.service.js";
 import UserProfileService from "./userProfile.service.js";
 import {
@@ -24,9 +25,8 @@ export class UserController {
     const newUser = await userService.createUser(userData);
 
     const plan = await planModel.findOne({ price: 0 });
-    const startDate = new Date(stripeSubscription.current_period_start * 1000);
-    const endDate = new Date(stripeSubscription.current_period_end * 1000);
-
+    const startDate = moment().toDate();
+    const endDate = moment().add(30, "days").toDate();
     // Create or update subscription
     const newSub = await subscriptionService.createOrUpdateSubscription({
       user: newUser._id,
@@ -34,7 +34,6 @@ export class UserController {
       startDate,
       endDate,
       creditsAllocated: plan.credits,
-      stripeSubscriptionId: stripeSubscription.id,
     });
 
     // Link subscription to user

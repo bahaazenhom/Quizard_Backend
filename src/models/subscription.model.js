@@ -14,7 +14,7 @@ const subscriptionSchema = new mongoose.Schema(
 
     // dates from Stripe but store local for convenience
     startDate: Date,
-    currentPeriodEnd: Date,
+    endDate: Date,
     status: String, // active, past_due, canceled, unpaid, incomplete, etc.
 
     creditsAllocated: { type: Number, required: true },
