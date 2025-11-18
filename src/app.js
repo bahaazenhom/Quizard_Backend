@@ -1,6 +1,6 @@
 import express from "express";
 import { globalResponse } from "./middlewares/globalErrorHandler.middleware.js";
-import path from "path";
+import planRouter from "./modules/plan/plan.router.js";
 import userRouter from "./modules/user/user.route.js";
 import groupRouter from "./modules/Group/group.route.js";
 import cors from "cors";
@@ -20,9 +20,7 @@ app.use(express.json());
 // Define your routes here
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/groups", groupRouter);
-
-app.use("/uploads", express.static(path.resolve("src/uploads")));
-
+app.use("/api/v1/plans", planRouter);
 // global error handler
 app.use(globalResponse);
 
