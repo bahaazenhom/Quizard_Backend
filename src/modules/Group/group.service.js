@@ -66,7 +66,7 @@ export class GroupService {
             const data = await Promise.all(
                 memberships.map(async (membership) => {
                     const group = membership.group;
-
+                    console.log(group)
                     if (!group) {
                         const obj = membership.toObject();
                         delete obj.user;
