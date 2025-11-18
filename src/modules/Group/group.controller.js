@@ -1,4 +1,4 @@
-import { GroupService } from './group.service.js';
+import { GroupService } from "./group.service.js";
 
 const groupService = new GroupService();
 
@@ -13,7 +13,10 @@ export class GroupController {
   }
   async getGroupById(req, res, next) {
     try {
-      const group = await groupService.getGroupById(req.params.id, req.authUser._id);
+      const group = await groupService.getGroupById(
+        req.params.id,
+        req.authUser._id
+      );
       res.json({ success: true, data: group });
     } catch (error) {
       next(error);
@@ -30,7 +33,10 @@ export class GroupController {
 
   async createGroup(req, res, next) {
     try {
-      const createdGroup = await groupService.createGroup(req.body, req.authUser);
+      const createdGroup = await groupService.createGroup(
+        req.body,
+        req.authUser
+      );
       res.status(201).json({ success: true, data: createdGroup });
     } catch (error) {
       next(error);
@@ -39,10 +45,10 @@ export class GroupController {
 
   async joinGroup(req, res, next) {
     try {
-      const joinedGroup = await groupService.joinGroup(req.body, req.authUser)
+      const joinedGroup = await groupService.joinGroup(req.body, req.authUser);
       res.status(201).json({ success: true, data: joinedGroup });
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
 
@@ -78,6 +84,18 @@ export class GroupController {
     try {
       const restoredGroup = await groupService.restoreGroup(req.params.id);
       res.status(200).json({ success: true, data: restoredGroup });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async leaveGroup(req, res, next) {
+    try {
+      const result = await groupService.leaveGroup(
+        req.params.id,
+        req.authUser._id
+      );
+      res.status(200).json({ success: true, data: result });
     } catch (error) {
       next(error);
     }
