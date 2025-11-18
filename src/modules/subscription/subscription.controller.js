@@ -40,8 +40,8 @@ export class SubscriptionController {
         metadata: { userId: user._id.toString(), planId: plan._id.toString() },
         subscription_data: {
           metadata: {
-            userId: user._id,
-            planId: plan._id,
+            userId: user._id.toString(),
+            planId: plan._id.toString(),
           },
         },
       });
