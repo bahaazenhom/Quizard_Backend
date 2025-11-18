@@ -117,8 +117,10 @@ export class GroupService {
                 ...data,
                 owner: authUser._id
             });
-            console.log(authUser)
-            await User.findByIdAndUpdate(authUser._id, { teachingCourses: teachingCourses + 1 }, { new: true })
+            const teachingCourses = authUser.teachingCourses
+            await User.findByIdAndUpdate(authUser._id,
+                { $inc: { teachingCourses: 1 } },
+                { new: true })
             await GroupMember.create({
                 group: createdGroup._id,
                 user: authUser._id,
@@ -135,27 +137,61 @@ export class GroupService {
         }
     }
 
-    async joinGroup(inviteCode, userId) {
+    async joinGroup(data, userId) {
         try {
-            const groupSelected = await Group.findOne({ inviteCode })
-            if (!groupSelected) throw new ErrorClass("Cannot get groups", 404);
-            if (groupSelected.owner === userId) throw new ErrorClass("You are Teacher in this group", 404);
-            const existGroup = await GroupMember.findOne({ group: groupSelected._id, user: userId })
-            if (existGroup) throw new ErrorClass("You already joined this group", 404);
-            const newGroupMember = await GroupMember.create({
-                group: groupSelected._id,
+            const { inviteCode } = data;
+
+            if (!inviteCode) {
+                throw new ErrorClass("Invite code is required", 400);
+            }
+
+            // 1) Get group
+            const group = await Group.findOne({ inviteCode });
+            if (!group) {
+                throw new ErrorClass("Invalid invite code", 404);
+            }
+
+            // 2) Prevent owner (teacher) from joining as a student
+            if (group.owner.toString() === userId.toString()) {
+                throw new ErrorClass("You are the teacher of this group", 403);
+            }
+
+            // 3) Check if already member
+            const alreadyMember = await GroupMember.findOne({
+                group: group._id,
+                user: userId
+            });
+
+            if (alreadyMember) {
+                throw new ErrorClass("You already joined this group", 409);
+            }
+
+            // 4) Increment enrolledCourses atomically
+            await User.findByIdAndUpdate(
+                userId,
+                { $inc: { enrolledCourses: 1 } },
+                { new: true }
+            );
+
+            // 5) Create group member record
+            const newMember = await GroupMember.create({
+                group: group._id,
                 user: userId,
-            })
-            return newGroupMember;
+                role: "student"
+            });
+
+            return newMember;
+
         } catch (error) {
             throw new ErrorClass(
-                "Failed to create group",
-                500,
+                "Failed to join group",
+                error.statusCode || 500,
                 error.message,
-                "groupService.createGroup"
+                "groupService.joinGroup"
             );
         }
     }
+
 
     async updateGroup(id, data, authUser) {
         try {
