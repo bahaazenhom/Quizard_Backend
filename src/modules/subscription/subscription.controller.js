@@ -5,7 +5,7 @@ import Plan from "../../models/plan.model.js";
 import { ErrorClass } from "../../utils/errorClass.util.js";
 import { sendPaymentConfirmationEmail } from "../../utils/mail.util.js";
 const subscriptionService = new SubscriptionService();
-
+const userService = new UserService();
 export class SubscriptionController {
   // ------------------------------------------------------
   // 1) Create Checkout Session
@@ -103,13 +103,13 @@ export class SubscriptionController {
         });
 
         // Link subscription to user
-        await UserService.updateUser(userId, {
+        await userService.updateUser(userId, {
           currentSubscription: newSub._id,
         });
 
         // Send payment confirmation email
         try {
-          const user = await UserService.getUserById(userId);
+          const user = await userService.getUserById(userId);
           await sendPaymentConfirmationEmail(
             user.email,
             user.fullName,
@@ -144,7 +144,7 @@ export class SubscriptionController {
           const sub = event.data.object;
           const userId = sub.metadata.userId;
 
-          await UserService.updateUser(userId, { currentSubscription: null });
+          await userService.updateUser(userId, { currentSubscription: null });
           await subscriptionService.deactivateSubscription(userId);
           break;
         }

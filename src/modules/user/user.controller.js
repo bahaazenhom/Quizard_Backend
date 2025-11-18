@@ -6,6 +6,8 @@ import {
 } from "../../utils/jwt.util.js";
 import { cloudinaryConfig } from "../../config/cloudinary.config.js";
 import { ErrorClass } from "../../utils/errorClass.util.js";
+import planModel from "../../models/plan.model.js";
+import { SubscriptionService } from "../subscription/subscription.service.js";
 const userService = new UserService();
 
 export class UserController {
@@ -17,7 +19,27 @@ export class UserController {
         new ErrorClass("Email is already exits", 400, "Validation Error")
       );
     }
-    const newUser = await userService.createUser(userData);
+
+    const newUser = await UserService.createUser(userData);
+
+    const plan = await planModel.findOne({ price: 0 });
+    const startDate = new Date(stripeSubscription.current_period_start * 1000);
+    const endDate = new Date(stripeSubscription.current_period_end * 1000);
+
+    // Create or update subscription
+    const newSub = await SubscriptionService.createOrUpdateSubscription({
+      user: userId,
+      plan: planId,
+      startDate,
+      endDate,
+      creditsAllocated: plan.credits,
+      stripeSubscriptionId: stripeSubscription.id,
+    });
+
+    // Link subscription to user
+    await UserService.updateUser(userId, {
+      currentSubscription: newSub._id,
+    });
     res
       .status(201)
       .json({ message: "User registered successfully", user: newUser });

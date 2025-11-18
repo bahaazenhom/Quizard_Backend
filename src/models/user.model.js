@@ -30,8 +30,8 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    teachingCourses: { type: Number,  default: 0 },
-    enrolledCourses: { type: Number,  default: 0 },
+    teachingCourses: { type: Number, default: 0 },
+    enrolledCourses: { type: Number, default: 0 },
     isConfirmed: {
       type: Boolean,
       default: false,
