@@ -4,8 +4,10 @@ import { SubscriptionService } from "./subscription.service.js";
 import Plan from "../../models/plan.model.js";
 import { ErrorClass } from "../../utils/errorClass.util.js";
 import { sendPaymentConfirmationEmail } from "../../utils/mail.util.js";
+
 const subscriptionService = new SubscriptionService();
 const userService = new UserService();
+
 export class SubscriptionController {
   // ------------------------------------------------------
   // 1) Create Checkout Session
@@ -60,48 +62,101 @@ export class SubscriptionController {
   }
 
   // ------------------------------------------------------
-  // 2) Handle Webhook
+  // 2) Handle Webhook - FIXED VERSION
   // ------------------------------------------------------
   async handleStripeWebhook(req, res, next) {
-    // Added 'next' for error handling
     let event;
-    const stripe = getStripe(); // Initialize Stripe instance here
+    const stripe = getStripe();
 
-    console.log("i am in webhook");
+    console.log("Webhook received");
+
+    // CRITICAL: Validate webhook secret exists
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      console.error("STRIPE_WEBHOOK_SECRET is not configured");
+      return res.status(500).json({
+        error: "Webhook secret not configured",
+      });
+    }
 
     try {
       const signature = req.headers["stripe-signature"];
 
+      // Validate signature header exists
+      if (!signature) {
+        console.error("Missing stripe-signature header");
+        return res.status(400).json({
+          error: "Missing stripe-signature header",
+        });
+      }
+
+      // Check for raw body - this is the most common issue
+      if (!req.rawBody && !req.body) {
+        console.error("Missing request body for webhook verification");
+        return res.status(400).json({
+          error: "Missing request body",
+        });
+      }
+
+      // Use rawBody if available, otherwise try body
+      const payload = req.rawBody || req.body;
+
+      console.log("Attempting to verify webhook signature...");
+      console.log("Payload type:", typeof payload);
+      console.log("Payload length:", payload?.length || 0);
+
+      // Construct and verify the event
       event = stripe.webhooks.constructEvent(
-        req.rawBody,
+        payload,
         signature,
         process.env.STRIPE_WEBHOOK_SECRET
       );
+
+      console.log("Webhook signature verified successfully");
     } catch (err) {
-      // It's good to log the error for debugging purposes
-      console.error("Stripe webhook construction error:", err);
-      return next(
-        new ErrorClass(
-          err.message,
-          500,
-          null,
-          "Webhook signature verification error"
-        ) // More specific message
+      // Enhanced error logging
+      console.error("=== WEBHOOK VERIFICATION ERROR ===");
+      console.error("Error type:", err.constructor.name);
+      console.error("Error message:", err.message || "No message");
+      console.error("Error stack:", err.stack);
+
+      // Check for specific Stripe error properties
+      if (err.type) {
+        console.error("Stripe error type:", err.type);
+      }
+
+      // Log what we received
+      console.error("Signature header:", req.headers["stripe-signature"]);
+      console.error("Raw body exists:", !!req.rawBody);
+      console.error("Body exists:", !!req.body);
+      console.error(
+        "Webhook secret configured:",
+        !!process.env.STRIPE_WEBHOOK_SECRET
       );
+
+      // Return error response to Stripe
+      return res.status(400).json({
+        error: `Webhook Error: ${err.message || "Unknown error"}`,
+        type: err.type || "verification_failed",
+      });
     }
 
-    // Now 'event' is guaranteed to be defined if the try block succeeded
-    console.log("Stripe event type:", event.type);
+    // Process the verified event
+    console.log("Processing Stripe event type:", event.type);
 
     try {
       // Reusable logic for creation + renewal
       const processSubscription = async (stripeSubscription) => {
         const { userId, planId } = stripeSubscription.metadata;
 
-        // Ensure userId and planId exist before proceeding
+        // Validate metadata
         if (!userId || !planId) {
+          console.error("Missing metadata:", { userId, planId });
           throw new Error("Missing userId or planId in subscription metadata.");
         }
+
+        console.log(
+          `Processing subscription for user ${userId}, plan ${planId}`
+        );
 
         const plan = await Plan.findById(planId);
         if (!plan) {
@@ -123,6 +178,8 @@ export class SubscriptionController {
           stripeSubscriptionId: stripeSubscription.id,
         });
 
+        console.log(`Subscription created/updated: ${newSub._id}`);
+
         // Link subscription to user
         await userService.updateUser(userId, {
           currentSubscription: newSub._id,
@@ -139,27 +196,25 @@ export class SubscriptionController {
               startDate,
               endDate
             );
+            console.log(`Confirmation email sent to ${user.email}`);
           } else {
             console.warn(
               `User with ID ${userId} not found for email confirmation.`
             );
           }
-        } catch (err) {
-          console.error("Failed to send payment confirmation email:", err);
-          // Decide if email sending failure should halt the webhook process
-          // For now, it just logs and continues.
+        } catch (emailErr) {
+          console.error("Failed to send payment confirmation email:", emailErr);
+          // Email failure shouldn't stop webhook processing
         }
       };
 
-      console.log("Processing event of type:", event.type);
       // ----------------------------
       //        EVENT SWITCH
       // ----------------------------
-
       switch (event.type) {
         case "customer.subscription.created":
-          // Ensure the subscription object is available
           if (event.data.object) {
+            console.log("Processing subscription.created event");
             await processSubscription(event.data.object);
           } else {
             console.warn(
@@ -169,6 +224,7 @@ export class SubscriptionController {
           break;
 
         case "invoice.payment_succeeded": {
+          console.log("Processing invoice.payment_succeeded event");
           const invoice = event.data.object;
           if (invoice && invoice.subscription) {
             const subscription = await stripe.subscriptions.retrieve(
@@ -184,12 +240,14 @@ export class SubscriptionController {
         }
 
         case "customer.subscription.deleted": {
+          console.log("Processing subscription.deleted event");
           const sub = event.data.object;
-          const userId = sub.metadata.userId;
+          const userId = sub.metadata?.userId;
 
           if (userId) {
             await userService.updateUser(userId, { currentSubscription: null });
             await subscriptionService.deactivateSubscription(userId);
+            console.log(`Subscription deactivated for user ${userId}`);
           } else {
             console.warn(
               "customer.subscription.deleted event missing userId in metadata"
@@ -197,22 +255,24 @@ export class SubscriptionController {
           }
           break;
         }
-        // Handle other event types if necessary, or log them
+
         default:
-          console.log(`Unhandled event type ${event.type}`);
+          console.log(`Unhandled event type: ${event.type}`);
       }
 
-      return res.json({ received: true });
-    } catch (err) {
-      console.error("Error processing Stripe webhook event:", err);
-      return next(
-        new ErrorClass(
-          "Webhook processing error",
-          500,
-          null,
-          "An error occurred while processing the webhook event."
-        )
-      );
+      // Success response
+      return res.status(200).json({ received: true });
+    } catch (processingErr) {
+      console.error("=== WEBHOOK PROCESSING ERROR ===");
+      console.error("Error:", processingErr);
+      console.error("Stack:", processingErr.stack);
+
+      // Still return 200 to Stripe to avoid retries for business logic errors
+      // Log the error for investigation
+      return res.status(200).json({
+        received: true,
+        warning: "Event received but processing failed",
+      });
     }
   }
 

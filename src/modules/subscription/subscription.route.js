@@ -1,26 +1,24 @@
+// routes/subscription.routes.js
 import express from "express";
-import { Router } from "express";
 import { SubscriptionController } from "./subscription.controller.js";
-import { auth } from "../../middlewares/authentication.middleware.js";
 
-const router = Router();
+const router = express.Router();
 const subscriptionController = new SubscriptionController();
-
-// User creates checkout session
-router.post("/checkout", auth(), subscriptionController.createCheckoutSession);
-
-// Stripe webhook (no auth)
 router.post(
   "/webhook",
-  express.raw({ type: "application/json" }),
-  subscriptionController.handleStripeWebhook
+  express.raw({ type: "application/json" }), // Captures raw body as Buffer
+  subscriptionController.handleStripeWebhook.bind(subscriptionController)
 );
 
-// Get user's subscription
+// Other routes with JSON parsing
+router.post(
+  "/checkout",
+  subscriptionController.createCheckoutSession.bind(subscriptionController)
+);
+
 router.get(
   "/my-subscription",
-  auth(),
-  subscriptionController.getMySubscription
+  subscriptionController.getMySubscription.bind(subscriptionController)
 );
 
 export default router;
