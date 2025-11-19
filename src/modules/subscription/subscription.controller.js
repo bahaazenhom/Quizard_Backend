@@ -160,10 +160,27 @@ export class SubscriptionController {
           throw new Error(`Plan with ID ${planId} not found.`);
         }
 
+        // Validate Stripe subscription has required timestamp fields
+        if (
+          !stripeSubscription.current_period_start ||
+          !stripeSubscription.current_period_end
+        ) {
+          throw new Error(
+            `Stripe subscription missing required period dates. current_period_start: ${stripeSubscription.current_period_start}, current_period_end: ${stripeSubscription.current_period_end}`
+          );
+        }
+
         const startDate = new Date(
           stripeSubscription.current_period_start * 1000
         );
         const endDate = new Date(stripeSubscription.current_period_end * 1000);
+
+        // Validate dates are valid
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          throw new Error(
+            `Invalid dates calculated from Stripe subscription. startDate: ${startDate}, endDate: ${endDate}`
+          );
+        }
 
         // Create or update subscription
         const newSub = await subscriptionService.createOrUpdateSubscription({
