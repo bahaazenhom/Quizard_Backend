@@ -83,7 +83,9 @@ export class UserController {
     const accessToken = generateAccessToken({
       userId: user._id,
     });
-    res.status(200).json({ message: "Login successful", accessToken });
+    res
+      .status(200)
+      .json({ message: "Login successful", accessToken, role: user.role });
   }
   // profile controller methods will be here in future
   /**
