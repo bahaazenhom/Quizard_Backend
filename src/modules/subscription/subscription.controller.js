@@ -67,9 +67,6 @@ export class SubscriptionController {
   async handleStripeWebhook(req, res, next) {
     let event;
     const stripe = getStripe();
-
-    console.log("Webhook received" + process.env.STRIPE_WEBHOOK_SECRET);
-
     // CRITICAL: Validate webhook secret exists
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       console.error("STRIPE_WEBHOOK_SECRET is not configured");
@@ -176,6 +173,7 @@ export class SubscriptionController {
           endDate,
           creditsAllocated: plan.credits,
           stripeSubscriptionId: stripeSubscription.id,
+          status: stripeSubscription.status || "active",
         });
 
         console.log(`Subscription created/updated: ${newSub._id}`);
@@ -226,15 +224,50 @@ export class SubscriptionController {
         case "invoice.payment_succeeded": {
           console.log("Processing invoice.payment_succeeded event");
           const invoice = event.data.object;
-          if (invoice && invoice.subscription) {
+
+          // Add detailed logging to debug the issue
+          console.log("Invoice ID:", invoice?.id);
+          console.log("Invoice subscription field:", invoice?.subscription);
+          console.log(
+            "Invoice subscription type:",
+            typeof invoice?.subscription
+          );
+          console.log("Invoice billing_reason:", invoice?.billing_reason);
+          console.log(
+            "Full invoice object keys:",
+            invoice ? Object.keys(invoice).join(", ") : "none"
+          );
+
+          // Check if invoice exists and has a subscription
+          if (!invoice) {
+            console.error(
+              "invoice.payment_succeeded: No invoice object in event data"
+            );
+            break;
+          }
+
+          if (!invoice.subscription) {
+            console.warn(
+              "invoice.payment_succeeded: Invoice has no subscription field"
+            );
+            console.warn("This might be a one-time payment or setup invoice");
+            // Don't process non-subscription invoices
+            break;
+          }
+
+          try {
+            console.log(`Retrieving subscription: ${invoice.subscription}`);
             const subscription = await stripe.subscriptions.retrieve(
               invoice.subscription
             );
-            await processSubscription(subscription);
-          } else {
-            console.warn(
-              "invoice.payment_succeeded event missing invoice or subscription ID"
+            console.log(
+              "Subscription retrieved successfully:",
+              subscription.id
             );
+            await processSubscription(subscription);
+          } catch (retrieveErr) {
+            console.error("Failed to retrieve subscription:", retrieveErr);
+            throw retrieveErr;
           }
           break;
         }

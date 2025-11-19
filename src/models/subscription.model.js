@@ -1,3 +1,4 @@
+import { required } from "joi";
 import mongoose from "mongoose";
 
 const subscriptionSchema = new mongoose.Schema(
@@ -13,8 +14,14 @@ const subscriptionSchema = new mongoose.Schema(
     stripeSubscriptionId: { type: String, required: true, unique: true },
 
     // dates from Stripe but store local for convenience
-    startDate: Date,
-    endDate: Date,
+    startDate: {
+      Date,
+      required: true,
+    },
+    endDate: {
+      Date,
+      required: true,
+    },
     status: String, // active, past_due, canceled, unpaid, incomplete, etc.
 
     creditsAllocated: { type: Number, required: true },

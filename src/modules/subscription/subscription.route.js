@@ -4,7 +4,6 @@ import { SubscriptionController } from "./subscription.controller.js";
 import { auth } from "../../middlewares/authentication.middleware.js";
 const router = express.Router();
 const subscriptionController = new SubscriptionController();
-console.log("sssss");
 
 // Other routes with JSON parsing
 router.post("/checkout", auth(), subscriptionController.createCheckoutSession);
