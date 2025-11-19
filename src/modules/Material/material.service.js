@@ -2,6 +2,8 @@ import Module from "../../models/module.model.js";
 import mongoose from "mongoose";
 import Material from "../../models/material.model.js"
 import { ErrorClass } from "../../utils/errorClass.util.js";
+import { StorageService } from '../GoogleCloudStorage/StorageService.js';
+const storageService = new StorageService();
 export class MaterialService {
     async createMaterial(data, moduleId) {
         try {
@@ -11,13 +13,17 @@ export class MaterialService {
 
             const module = await Module.findById(moduleId);
             if (!module) throw new ErrorClass("Module not found", 404);
+            const materials = []
+            await Promise.all(data.map(async (material) => {
+                material.module = moduleId;
+                const savedMaterial = await Material.create(material);
+                materials.push(savedMaterial);
+                module.material.push(savedMaterial._id);
+            }))
 
-            const material = await Material.create(data);
-
-            module.material.push(material._id);
             await module.save();
 
-            return material;
+            return materials;
         } catch (error) {
             throw new ErrorClass(
                 "Failed to create material",
@@ -28,9 +34,9 @@ export class MaterialService {
         }
     }
 
-    async getMaterials(moduleId) {
+    async getMaterials(module) {
         try {
-            return await Material.find({ moduleId });
+            return await Material.find({ module });
         } catch (error) {
             throw new ErrorClass(
                 "Failed to get materials",
@@ -73,9 +79,13 @@ export class MaterialService {
 
     async deleteMaterial(id, moduleId) {
         try {
+            const materialToDelete = await Material.findById(id);
+            const materialFullName = materialToDelete?.fullName;
             const deleted = await Material.findByIdAndDelete(id);
             if (!deleted) throw new ErrorClass("Material not found", 404);
-
+            if (materialFullName) {
+                storageService.deleteFile(materialFullName);
+            }
             await Module.findByIdAndUpdate(moduleId, {
                 $pull: { material: id },
             });

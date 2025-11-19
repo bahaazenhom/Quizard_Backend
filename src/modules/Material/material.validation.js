@@ -9,9 +9,9 @@ const objectId = (value, helpers) => {
 };
 
 export const createMaterialSchema = Joi.object({
-  title: Joi.string().min(3).max(100).required(),
-  type: Joi.string().valid("pdf", "video", "link").required(),
-  url: Joi.string().uri().required(),
+  title: Joi.string().min(3).max(100),
+  type: Joi.string().valid("pdf", "video", "link"),
+  url: Joi.string().uri(),
 });
 
 export const updateMaterialSchema = Joi.object({

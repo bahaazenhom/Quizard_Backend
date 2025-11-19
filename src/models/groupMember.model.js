@@ -1,5 +1,35 @@
 import mongoose from "mongoose";
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     GroupMember:
+ *       type: object
+ *       required:
+ *         - group
+ *         - user
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Auto-generated MongoDB ID
+ *         group:
+ *           type: string
+ *           description: Reference to Group
+ *         user:
+ *           type: string
+ *           description: Reference to User
+ *         role:
+ *           type: string
+ *           enum: [student, teacher]
+ *           default: student
+ *           description: Member's role in the group
+ *         joinedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp when user joined
+ */
+
 const groupMemberSchema = new mongoose.Schema({
   group: { type: mongoose.Schema.Types.ObjectId, ref: "Group", required: true },
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
