@@ -67,7 +67,7 @@ const materialController = new MaterialController();
 router.post(
   "/:moduleId",
   auth(),
-  upload.array('files', 10),
+  upload.array("files", 10),
   validate(createMaterialSchema),
   errorHandler(materialController.createMaterial)
 );
@@ -217,9 +217,10 @@ router.delete(
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.get("/module/:moduleId",
-    auth(),
-    errorHandler(materialController.getMaterialsByModuleId)
+router.get(
+  "/module/:moduleId",
+  auth(),
+  errorHandler(materialController.getMaterialsByModuleId)
 );
 
 export default router;

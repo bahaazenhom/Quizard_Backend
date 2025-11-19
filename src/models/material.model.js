@@ -45,7 +45,7 @@ const materialSchema = new mongoose.Schema(
     type: { type: String, enum: ["pdf", "video", "link"], required: false },
     url: String,
     module: { type: mongoose.Schema.Types.ObjectId, ref: "Module" },
-    fullName: { type: String }
+    fullName: { type: String },
   },
   { timestamps: true }
 );
