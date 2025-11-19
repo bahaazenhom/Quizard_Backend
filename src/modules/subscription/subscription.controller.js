@@ -143,6 +143,21 @@ export class SubscriptionController {
     try {
       // Reusable logic for creation + renewal
       const processSubscription = async (stripeSubscription) => {
+        // Log the entire subscription object to debug
+        console.log("=== STRIPE SUBSCRIPTION OBJECT ===");
+        console.log("Subscription ID:", stripeSubscription.id);
+        console.log("Subscription status:", stripeSubscription.status);
+        console.log(
+          "current_period_start:",
+          stripeSubscription.current_period_start
+        );
+        console.log(
+          "current_period_end:",
+          stripeSubscription.current_period_end
+        );
+        console.log("Metadata:", stripeSubscription.metadata);
+        console.log("=====================================");
+
         const { userId, planId } = stripeSubscription.metadata;
 
         // Validate metadata
@@ -160,20 +175,27 @@ export class SubscriptionController {
           throw new Error(`Plan with ID ${planId} not found.`);
         }
 
-        // Validate Stripe subscription has required timestamp fields
-        if (
-          !stripeSubscription.current_period_start ||
-          !stripeSubscription.current_period_end
-        ) {
-          throw new Error(
-            `Stripe subscription missing required period dates. current_period_start: ${stripeSubscription.current_period_start}, current_period_end: ${stripeSubscription.current_period_end}`
-          );
+        // Use current_period_start and current_period_end if available
+        // Otherwise use period_start and period_end (alternative field names)
+        const periodStart =
+          stripeSubscription.current_period_start ||
+          stripeSubscription.period_start;
+        const periodEnd =
+          stripeSubscription.current_period_end ||
+          stripeSubscription.period_end;
+
+        if (!periodStart || !periodEnd) {
+          console.error("Missing period dates:", {
+            current_period_start: stripeSubscription.current_period_start,
+            current_period_end: stripeSubscription.current_period_end,
+            period_start: stripeSubscription.period_start,
+            period_end: stripeSubscription.period_end,
+          });
+          throw new Error(`Stripe subscription missing required period dates.`);
         }
 
-        const startDate = new Date(
-          stripeSubscription.current_period_start * 1000
-        );
-        const endDate = new Date(stripeSubscription.current_period_end * 1000);
+        const startDate = new Date(periodStart * 1000);
+        const endDate = new Date(periodEnd * 1000);
 
         // Validate dates are valid
         if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
