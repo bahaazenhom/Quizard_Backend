@@ -225,20 +225,7 @@ export class SubscriptionController {
           console.log("Processing invoice.payment_succeeded event");
           const invoice = event.data.object;
 
-          // Add detailed logging to debug the issue
-          console.log("Invoice ID:", invoice?.id);
-          console.log("Invoice subscription field:", invoice?.subscription);
-          console.log(
-            "Invoice subscription type:",
-            typeof invoice?.subscription
-          );
-          console.log("Invoice billing_reason:", invoice?.billing_reason);
-          console.log(
-            "Full invoice object keys:",
-            invoice ? Object.keys(invoice).join(", ") : "none"
-          );
-
-          // Check if invoice exists and has a subscription
+          // Check if invoice exists
           if (!invoice) {
             console.error(
               "invoice.payment_succeeded: No invoice object in event data"
@@ -246,19 +233,36 @@ export class SubscriptionController {
             break;
           }
 
-          if (!invoice.subscription) {
+          // Extract subscription ID - it may be in invoice.subscription field OR in the lines
+          let subscriptionId = invoice.subscription;
+
+          // If not found in subscription field, try to get from lines array
+          if (
+            !subscriptionId &&
+            invoice.lines &&
+            invoice.lines.data.length > 0
+          ) {
+            subscriptionId = invoice.lines.data[0].subscription;
+            console.log("Extracted subscription ID from invoice lines");
+          }
+
+          // Check if we found a subscription
+          if (!subscriptionId) {
             console.warn(
-              "invoice.payment_succeeded: Invoice has no subscription field"
+              "invoice.payment_succeeded: No subscription found in invoice"
             );
-            console.warn("This might be a one-time payment or setup invoice");
+            console.warn(
+              "This might be a one-time payment or setup invoice, billing_reason:",
+              invoice.billing_reason
+            );
             // Don't process non-subscription invoices
             break;
           }
 
           try {
-            console.log(`Retrieving subscription: ${invoice.subscription}`);
+            console.log(`Retrieving subscription: ${subscriptionId}`);
             const subscription = await stripe.subscriptions.retrieve(
-              invoice.subscription
+              subscriptionId
             );
             if (!subscription) {
               console.error("Failed to retrieve subscription object");
