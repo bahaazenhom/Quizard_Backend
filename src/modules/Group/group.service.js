@@ -8,7 +8,10 @@ import Module from "../../models/module.model.js";
 export class GroupService {
   async getGroup() {
     try {
-      const groups = await Group.find();
+      const groups = await Group.find().populate({
+        path: "owner",
+        select: "firstName lastName email",
+      });
       if (!groups) throw new ErrorClass("Cannot get groups", 404);
       return groups;
     } catch (error) {
