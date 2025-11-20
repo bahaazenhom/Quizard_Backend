@@ -33,13 +33,7 @@ export const sendVerificationEmail = async (to, userName, confirmationLink) => {
   }
 };
 
-export const sendPaymentConfirmationEmail = async (
-  to,
-  userName,
-  planName,
-  startDate,
-  endDate
-) => {
+export const sendPaymentConfirmationEmail = async (to, userName, planName) => {
   console.log(`Sending payment confirmation email to ${to}...`);
   try {
     if (!process.env.SENDGRID_API_KEY) {
@@ -61,12 +55,10 @@ export const sendPaymentConfirmationEmail = async (
         name: "Quizard Support",
       },
       subject: "Subscription Confirmed",
-      templateId: process.env.PAYMENT_TEMPLATE_ID, // create a SendGrid dynamic template
+      templateId: process.env.PAYMENT_TEMPLATE_ID,
       dynamicTemplateData: {
         name: userName,
         plan: planName,
-        start_date: startDate.toDateString(),
-        end_date: endDate.toDateString(),
       },
     };
 
