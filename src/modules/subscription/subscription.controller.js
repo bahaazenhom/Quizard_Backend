@@ -156,6 +156,14 @@ export class SubscriptionController {
           stripeSubscription.current_period_end
         );
         console.log("Metadata:", stripeSubscription.metadata);
+        console.log(
+          "All subscription keys:",
+          Object.keys(stripeSubscription).join(", ")
+        );
+        console.log(
+          "Full subscription object:",
+          JSON.stringify(stripeSubscription, null, 2)
+        );
         console.log("=====================================");
 
         const { userId, planId } = stripeSubscription.metadata;
