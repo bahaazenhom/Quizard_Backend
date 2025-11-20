@@ -22,7 +22,13 @@ export class SubscriptionService {
 
   async getSubscriptionByUserId(userId) {
     try {
-      return await Subscription.findOne({ user: userId, isActive: true });
+      return await Subscription.findOne({
+        user: userId,
+        isActive: true,
+      }).populate({
+        path: "plan",
+        select: "name price credits",
+      });
     } catch (error) {
       throw new Error("Failed to get subscription: " + error.message);
     }
