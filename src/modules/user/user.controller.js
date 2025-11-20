@@ -9,8 +9,10 @@ import { cloudinaryConfig } from "../../config/cloudinary.config.js";
 import { ErrorClass } from "../../utils/errorClass.util.js";
 import planModel from "../../models/plan.model.js";
 import { SubscriptionService } from "../subscription/subscription.service.js";
+import { AnalyticsService } from "../analytics/analytics.service.js";
 const userService = new UserService();
 const subscriptionService = new SubscriptionService();
+const analyticsService = new AnalyticsService();
 
 export class UserController {
   async registerUser(req, res, next) {
@@ -80,6 +82,13 @@ export class UserController {
     }
 
     await userService.updateUser(user._id, { isActive: true });
+
+    // Record login activity for analytics
+    const ipAddress =
+      req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const userAgent = req.headers["user-agent"];
+    await analyticsService.recordLogin(user._id, ipAddress, userAgent);
+
     const accessToken = generateAccessToken({
       userId: user._id,
     });
@@ -294,6 +303,45 @@ export class UserController {
         success: true,
         data: result.users,
         pagination: result.pagination,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Delete user (admin only)
+   * DELETE /api/v1/users/:id
+   */
+  async deleteUser(req, res, next) {
+    try {
+      const { id } = req.params;
+
+      // Check if user exists
+      const user = await userService.getUserById(id);
+      if (!user) {
+        return next(new ErrorClass("User not found", 404, "Not Found"));
+      }
+
+      // Prevent deleting admin users
+      if (user.role === "admin") {
+        return next(
+          new ErrorClass("Cannot delete admin users", 403, "Forbidden")
+        );
+      }
+
+      // Delete the user
+      await userService.deleteUser(id);
+
+      res.status(200).json({
+        success: true,
+        message: "User deleted successfully",
+        data: {
+          _id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
       });
     } catch (error) {
       next(error);
