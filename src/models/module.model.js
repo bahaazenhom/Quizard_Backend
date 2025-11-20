@@ -21,11 +21,6 @@ import mongoose from "mongoose";
  *           items:
  *             type: string
  *           description: Array of Material references
- *         quizzes:
- *           type: array
- *           items:
- *             type: string
- *           description: Array of Quiz references
  *         group:
  *           type: string
  *           description: Reference to parent Group
@@ -33,8 +28,6 @@ import mongoose from "mongoose";
 
 const moduleSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  material: [{ type: mongoose.Schema.Types.ObjectId, ref: "Material" }],
-  quizzes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Quiz" }],
   group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
 });
 moduleSchema.index({ group: 1 });
