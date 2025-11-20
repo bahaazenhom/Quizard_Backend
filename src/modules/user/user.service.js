@@ -50,4 +50,32 @@ export class UserService {
       );
     }
   }
+
+  async deleteUser(userId) {
+    try {
+      const user = await User.findByIdAndDelete(userId);
+      return user;
+    } catch (error) {
+      throw new ErrorClass(
+        "Failed to delete user",
+        500,
+        error.message,
+        "UserService.deleteUser"
+      );
+    }
+  }
+
+  async getUserById(userId) {
+    try {
+      const user = await User.findById(userId).select("-password");
+      return user;
+    } catch (error) {
+      throw new ErrorClass(
+        "Failed to get user by ID",
+        500,
+        error.message,
+        "UserService.getUserById"
+      );
+    }
+  }
 }

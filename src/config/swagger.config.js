@@ -121,6 +121,10 @@ const options = {
         name: "Subscriptions",
         description: "User subscriptions and billing",
       },
+      {
+        name: "Analytics",
+        description: "Platform analytics and statistics (Admin only)",
+      },
     ],
   },
   apis: [
