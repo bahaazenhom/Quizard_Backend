@@ -12,7 +12,7 @@ const moduleQuizController = new ModuleQuizController();
 
 /**
  * @swagger
- * /api/module-quizzes:
+ * /api/v1/module-quizzes:
  *   post:
  *     summary: Create a new module-quiz association
  *     tags: [Module-Quizzes]
@@ -54,7 +54,7 @@ router.post(
 
 /**
  * @swagger
- * /api/module-quizzes:
+ * /api/v1/module-quizzes:
  *   get:
  *     summary: Get all module-quiz associations
  *     tags: [Module-Quizzes]
@@ -84,7 +84,7 @@ router.get("/", auth(), errorHandler(moduleQuizController.getAllModuleQuizzes));
 
 /**
  * @swagger
- * /api/module-quizzes/{id}:
+ * /api/v1/module-quizzes/{id}:
  *   get:
  *     summary: Get module-quiz association by ID
  *     tags: [Module-Quizzes]
@@ -121,7 +121,7 @@ router.get("/:id", auth(), errorHandler(moduleQuizController.getModuleQuizById))
 
 /**
  * @swagger
- * /api/module-quizzes/{id}:
+ * /api/v1/module-quizzes/{id}:
  *   put:
  *     summary: Update module-quiz association
  *     tags: [Module-Quizzes]
@@ -169,7 +169,7 @@ router.put(
 
 /**
  * @swagger
- * /api/module-quizzes/{id}:
+ * /api/v1/module-quizzes/{id}:
  *   delete:
  *     summary: Delete module-quiz association
  *     tags: [Module-Quizzes]

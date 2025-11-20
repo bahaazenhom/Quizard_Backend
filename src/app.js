@@ -6,14 +6,15 @@ import groupRouter from "./modules/Group/group.route.js";
 import subscriptionRouter from "./modules/subscription/subscription.route.js";
 import materialRouter from "./modules/Material/material.route.js";
 import moduleRouter from "./modules/Module/module.route.js";
+import analyticsRouter from "./modules/analytics/analytics.route.js";
+import questionRouter from "./modules/Question/question.route.js";
+import submissionRouter from "./modules/Submission/submission.route.js";
 import quizRoutes from "./modules/Quiz/quiz.route.js";
 import moduleQuizRoutes from "./modules/ModuleQuiz/moduleQuiz.route.js";
-import analyticsRouter from "./modules/analytics/analytics.route.js";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.config.js";
 import { SubscriptionController } from "./modules/subscription/subscription.controller.js";
-const subscriptionController = new SubscriptionController(); 
 import agentRouter from "./modules/Agent/agent.routes.js";
 const subscriptionController = new SubscriptionController();
 const app = express();
@@ -57,4 +58,5 @@ app.use("/api/v1/agent", agentRouter);
 app.use(globalResponse);
 
 export default app;
+
 

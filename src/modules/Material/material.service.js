@@ -18,6 +18,9 @@ export class MaterialService {
                 material.module = moduleId;
                 const savedMaterial = await Material.create(material);
                 materials.push(savedMaterial);
+                if (!Array.isArray(module.material)) {
+                    module.material = [];
+                }
                 module.material.push(savedMaterial._id);
             }))
 

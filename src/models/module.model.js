@@ -29,6 +29,7 @@ import mongoose from "mongoose";
 const moduleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
+  material: [{ type: mongoose.Schema.Types.ObjectId, ref: "Material" }],
 });
 moduleSchema.index({ group: 1 });
 

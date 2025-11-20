@@ -1,4 +1,4 @@
-// Utility for building an enhanced prompt with educator/session context before sending to the agent
+// Utility for building an enhanced prompt payload with educator/session context before sending to the agent
 const safeValue = (value) => (value ?? '').toString();
 
 export function buildEnhancedPrompt(userMessage, context = {}) {
@@ -9,7 +9,6 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
     groupName = '',
     educatorName = '',
     sessionId = '',
-    conversationHistory = [],
     timestamp = new Date().toISOString()
   } = context || {};
 
@@ -18,17 +17,16 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
     (Array.isArray(selectedModules) && selectedModules.length > 0) ||
     safeValue(groupId) ||
     safeValue(groupName) ||
-    safeValue(educatorName) ||
-    (Array.isArray(conversationHistory) && conversationHistory.length > 0);
+    safeValue(educatorName);
 
   // If no contextual info is provided, keep the original message untouched
   if (!hasContext) {
     return message;
   }
 
-  let enhancedPrompt = '';
+  let promptContext = '';
 
-  enhancedPrompt += `<prompt_context>
+  promptContext += `<prompt_context>
 <session_info>
   <sessionId>${safeValue(sessionId)}</sessionId>
   <educator_name>${safeValue(educatorName)}</educator_name>
@@ -44,7 +42,7 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
     selectedModules.forEach((module) => {
       const moduleId = safeValue(module?.id ?? module?.module_id);
       const moduleName = safeValue(module?.name ?? module?.module_name);
-      enhancedPrompt += `  <module>
+      promptContext += `  <module>
     <module_id>${moduleId}</module_id>
     <module_name>${moduleName}</module_name>
   </module>
@@ -52,7 +50,7 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
     });
   }
 
-  enhancedPrompt += `</selected_modules>
+  promptContext += `</selected_modules>
 
 <agent_instructions>
 - Role: Quiz-generation assistant for educators (analyze materials, gather requirements, generate/validate quizzes, post announcements).
@@ -66,25 +64,11 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
 
 `;
 
-  if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
-    enhancedPrompt += `<conversation_history>
-`;
-    conversationHistory.forEach((msg) => {
-      const role = safeValue(msg?.role || 'user');
-      const content = safeValue(msg?.content ?? msg?.text);
-      enhancedPrompt += `<message role="${role}">${content}</message>
-`;
-    });
-    enhancedPrompt += `</conversation_history>
-
-`;
-  }
-
-  enhancedPrompt += `<user_message>
-${message}
-</user_message>`;
-
-  return enhancedPrompt;
+  // Send a structured JSON payload string so the agent can read context separately from the user message.
+  return JSON.stringify({
+    prompt_context: promptContext,
+    user_message: message
+  });
 }
 
 export default {

@@ -37,6 +37,29 @@ export const createQuizValidation = Joi.object({
     }),
 }).options({ abortEarly: false, allowUnknown: true });
 
+const questionDetailSchema = Joi.object({
+    text: Joi.string().min(1).required(),
+    options: Joi.array().items(Joi.string().min(1)).min(2).required(),
+    correctOptionIndex: Joi.number().integer().min(0).required(),
+    point: Joi.number().min(0).required(),
+});
+
+export const createQuizFromDetailsValidation = Joi.object({
+    quiz_details: Joi.alternatives().try(
+        Joi.string().min(2),
+        Joi.object({
+            title: Joi.string().min(1).required(),
+            description: Joi.string().allow("").optional(),
+            totalMarks: Joi.number().min(0).required(),
+            durationMinutes: Joi.number().min(1).required(),
+            startAt: Joi.date().iso().required(),
+            endAt: Joi.date().iso().greater(Joi.ref("startAt")).required(),
+            questions: Joi.array().items(questionDetailSchema).min(1).required(),
+            module_ids: Joi.array().items(Joi.string().length(24).hex()).min(1).required(),
+        })
+    ).required(),
+}).options({ abortEarly: false, allowUnknown: true });
+
 export const updateQuizValidation = Joi.object({
     title: Joi.string().min(1).max(200).messages({
         "string.min": "Title must be at least 1 character long",

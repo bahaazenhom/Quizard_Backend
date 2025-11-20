@@ -12,7 +12,6 @@ export const authorization = (...allowedRoles) => {
         )
       );
     }
-
     // Check if user's role is in the allowed roles
     if (!allowedRoles.includes(req.authUser.role)) {
       return next(

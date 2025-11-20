@@ -25,6 +25,29 @@ function extractEvents(sessionData) {
   return [];
 }
 
+function extractUserMessageText(rawText) {
+  if (typeof rawText !== 'string') return rawText;
+
+  // If the text is a JSON string with a user_message field, return that field only
+  try {
+    const parsed = JSON.parse(rawText);
+    if (parsed && typeof parsed === 'object' && typeof parsed.user_message === 'string') {
+      return parsed.user_message;
+    }
+  } catch (e) {
+    // Not JSON, continue to tag parsing
+  }
+
+  // If the text contains <user_message>...</user_message>, extract inner content
+  console.log(rawText);
+  const match = rawText.match(/<user_message>\s*([\s\S]*?)\s*<\/user_message>/i);
+  if (match && match[1]) {
+    return match[1];
+  }
+
+  return rawText;
+}
+
 function buildTurnsFromEvents(events) {
   const messages = events.map((event) => {
     const parts = Array.isArray(event?.content?.parts) ? event.content.parts : [];
@@ -32,7 +55,7 @@ function buildTurnsFromEvents(events) {
     const role = (event?.content?.role === 'model' || event?.author !== 'user') ? 'agent' : 'user';
     return {
       role,
-      text: textPart?.text,
+      text: extractUserMessageText(textPart?.text),
       timestamp: event?.timestamp
     };
   }).filter((message) => typeof message?.text === 'string');
@@ -237,8 +260,7 @@ async function chat(req, res) {
       selectedModules,
       groupId,
       groupName,
-      educatorName,
-      conversationHistory
+      educatorName
     } = req.body;
 
     if (!message) {
@@ -260,8 +282,7 @@ async function chat(req, res) {
       groupId,
       groupName,
       educatorName,
-      sessionId,
-      conversationHistory
+      sessionId
     });
     console.log(enhancedMessage);
 
@@ -294,8 +315,7 @@ async function chatStream(req, res) {
       selectedModules,
       groupId,
       groupName,
-      educatorName,
-      conversationHistory
+      educatorName
     } = req.body;
 
     if (!message || !userId) {
@@ -315,8 +335,7 @@ async function chatStream(req, res) {
       groupId,
       groupName,
       educatorName,
-      sessionId,
-      conversationHistory
+      sessionId
     });
 
     let actualSessionId = sessionId;

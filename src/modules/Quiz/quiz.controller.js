@@ -4,6 +4,20 @@ import { ErrorClass } from "../../utils/errorClass.util.js";
 const quizService = new QuizService();
 
 export class QuizController {
+    async createQuizFromDetails(req, res, next) {
+        try {
+            const { quiz_details } = req.body;
+            const newQuiz = await quizService.createQuizWithDetails(quiz_details, req.user?._id);
+            res.status(201).json({
+                success: true,
+                message: "Quiz created successfully",
+                data: newQuiz,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async createQuiz(req, res, next) {
         try {
             const quizData = req.body;
