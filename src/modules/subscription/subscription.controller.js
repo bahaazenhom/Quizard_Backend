@@ -156,6 +156,14 @@ export class SubscriptionController {
           stripeSubscription.current_period_end
         );
         console.log("Metadata:", stripeSubscription.metadata);
+        console.log(
+          "All subscription keys:",
+          Object.keys(stripeSubscription).join(", ")
+        );
+        console.log(
+          "Full subscription object:",
+          JSON.stringify(stripeSubscription, null, 2)
+        );
         console.log("=====================================");
 
         const { userId, planId } = stripeSubscription.metadata;
@@ -275,6 +283,7 @@ export class SubscriptionController {
           // Log invoice details for debugging
           console.log("Invoice billing_reason:", invoice.billing_reason);
           console.log("Invoice subscription field:", invoice.subscription);
+          console.log("Invoice customer:", invoice.customer);
           console.log(
             "Invoice has lines:",
             invoice.lines ? invoice.lines.data.length : 0
@@ -299,23 +308,54 @@ export class SubscriptionController {
             }
           }
 
-          // For subscription_create billing reason, we might need to wait or the subscription hasn't been attached yet
+          // For subscription_create billing reason, retrieve the subscription from the customer
+          if (
+            !subscriptionId &&
+            invoice.billing_reason === "subscription_create" &&
+            invoice.customer
+          ) {
+            console.log(
+              "subscription_create invoice: Attempting to retrieve subscription from customer"
+            );
+            try {
+              // List subscriptions for this customer to find the one for this invoice
+              const subscriptions = await stripe.subscriptions.list({
+                customer: invoice.customer,
+                limit: 10,
+              });
+
+              // Find the subscription that matches this invoice period
+              if (subscriptions.data && subscriptions.data.length > 0) {
+                // Get the most recent subscription (first in list, sorted by creation date descending)
+                const subscription = subscriptions.data[0];
+                if (subscription) {
+                  subscriptionId = subscription.id;
+                  console.log(
+                    `Found subscription ${subscriptionId} for customer ${invoice.customer}`
+                  );
+                }
+              }
+            } catch (listErr) {
+              console.error(
+                "Failed to list subscriptions for customer:",
+                listErr
+              );
+            }
+          }
+
+          // Check if we found a subscription
           if (!subscriptionId) {
             console.warn(
-              "invoice.payment_succeeded: No subscription found in invoice"
+              "invoice.payment_succeeded: No subscription found in invoice or customer"
             );
             console.log(
               "Full invoice metadata:",
               JSON.stringify(invoice.metadata)
             );
-
-            // If billing_reason is subscription_create, this might be an initial invoice
-            // Log more details for debugging
-            if (invoice.billing_reason === "subscription_create") {
-              console.warn(
-                "This is a subscription_create invoice - subscription might be attached in separate event"
-              );
-            }
+            console.warn(
+              "This might be a one-time payment. billing_reason:",
+              invoice.billing_reason
+            );
             // Don't process non-subscription invoices
             break;
           }
