@@ -201,11 +201,8 @@ export class SubscriptionController {
         try {
           const user = await userService.getUserById(userId);
           if (user) {
-            await sendPaymentConfirmationEmail(
-              user.email,
-              user.fullName,
-              plan.name
-            );
+            const fullName = `${user.firstName} ${user.lastName}`;
+            await sendPaymentConfirmationEmail(user.email, fullName, plan.name);
           }
         } catch (emailErr) {
           // Email failure shouldn't stop webhook processing
