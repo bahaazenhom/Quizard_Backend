@@ -47,7 +47,6 @@ export class ModuleService {
         try {
             const module = await Module.findById(id)
                 .select("title group")
-                .populate("material quizzes");
             if (!module)
                 throw new ErrorClass("Module not found", 404);
             return module;
