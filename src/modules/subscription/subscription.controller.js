@@ -143,40 +143,12 @@ export class SubscriptionController {
     try {
       // Reusable logic for creation + renewal
       const processSubscription = async (stripeSubscription) => {
-        // Log the entire subscription object to debug
-        console.log("=== STRIPE SUBSCRIPTION OBJECT ===");
-        console.log("Subscription ID:", stripeSubscription.id);
-        console.log("Subscription status:", stripeSubscription.status);
-        console.log(
-          "current_period_start:",
-          stripeSubscription.current_period_start
-        );
-        console.log(
-          "current_period_end:",
-          stripeSubscription.current_period_end
-        );
-        console.log("Metadata:", stripeSubscription.metadata);
-        console.log(
-          "All subscription keys:",
-          Object.keys(stripeSubscription).join(", ")
-        );
-        console.log(
-          "Full subscription object:",
-          JSON.stringify(stripeSubscription, null, 2)
-        );
-        console.log("=====================================");
-
         const { userId, planId } = stripeSubscription.metadata;
 
         // Validate metadata
         if (!userId || !planId) {
-          console.error("Missing metadata:", { userId, planId });
           throw new Error("Missing userId or planId in subscription metadata.");
         }
-
-        console.log(
-          `Processing subscription for user ${userId}, plan ${planId}`
-        );
 
         const plan = await Plan.findById(planId);
         if (!plan) {
@@ -203,48 +175,22 @@ export class SubscriptionController {
           const subscriptionItem = stripeSubscription.items.data[0];
           periodStart = periodStart || subscriptionItem.current_period_start;
           periodEnd = periodEnd || subscriptionItem.current_period_end;
-          console.log("Using period dates from subscription item:", {
-            periodStart,
-            periodEnd,
-          });
         }
 
         if (!periodStart || !periodEnd) {
-          console.error("Missing period dates:", {
-            current_period_start: stripeSubscription.current_period_start,
-            current_period_end: stripeSubscription.current_period_end,
-            period_start: stripeSubscription.period_start,
-            period_end: stripeSubscription.period_end,
-            item_period_start:
-              stripeSubscription.items?.data?.[0]?.current_period_start,
-            item_period_end:
-              stripeSubscription.items?.data?.[0]?.current_period_end,
-          });
           throw new Error(`Stripe subscription missing required period dates.`);
-        }
-
-        const startDate = new Date(periodStart * 1000);
-        const endDate = new Date(periodEnd * 1000);
-
-        // Validate dates are valid
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          throw new Error(
-            `Invalid dates calculated from Stripe subscription. startDate: ${startDate}, endDate: ${endDate}`
-          );
         }
 
         // Create or update subscription
         const newSub = await subscriptionService.createOrUpdateSubscription({
           user: userId,
           plan: planId,
-          startDate,
-          endDate,
+          startDate: new Date(periodStart * 1000),
+          endDate: new Date(periodEnd * 1000),
           creditsAllocated: plan.credits,
           stripeSubscriptionId: stripeSubscription.id,
           status: stripeSubscription.status || "active",
         });
-
-        console.log(`Subscription created/updated: ${newSub._id}`);
 
         // Link subscription to user
         await userService.updateUser(userId, {
@@ -258,18 +204,10 @@ export class SubscriptionController {
             await sendPaymentConfirmationEmail(
               user.email,
               user.fullName,
-              plan.name,
-              startDate,
-              endDate
-            );
-            console.log(`Confirmation email sent to ${user.email}`);
-          } else {
-            console.warn(
-              `User with ID ${userId} not found for email confirmation.`
+              plan.name
             );
           }
         } catch (emailErr) {
-          console.error("Failed to send payment confirmation email:", emailErr);
           // Email failure shouldn't stop webhook processing
         }
       };
