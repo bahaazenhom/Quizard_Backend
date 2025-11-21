@@ -291,6 +291,7 @@ async function chat(req, res) {
 
     });
 
+
     let actualSessionId = sessionId;
     if (!actualSessionId) {
       actualSessionId = await agentService.getSessionOrCreate(userId);

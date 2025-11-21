@@ -22,7 +22,7 @@ async function getAccessToken() {
 
 const BASE_URL = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/reasoningEngines/${REASONING_ENGINE_ID}`;
 
-async function postToEngine(endpoint, payload) {
+async function postToEngine(endpoint, payload, { ndjson = false } = {}) {
   const token = await getAccessToken();
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: 'POST',
@@ -33,14 +33,42 @@ async function postToEngine(endpoint, payload) {
     body: JSON.stringify(payload)
   });
 
-  const data = await response.json();
+  const raw = await response.text();
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (parseErr) {
+    if (ndjson) {
+      // Try to parse first JSON line from streaming/NDJSON response
+      const firstLine = raw.split('\n').find((line) => line.trim().length > 0);
+      if (firstLine) {
+        try {
+          data = JSON.parse(firstLine);
+        } catch (err) {
+          throw buildVertexError(response, raw, "Vertex AI request failed (invalid NDJSON)");
+        }
+      } else {
+        throw buildVertexError(response, raw, "Vertex AI request failed (empty stream)");
+      }
+    } else {
+      throw buildVertexError(response, raw, "Vertex AI request failed (invalid JSON)");
+    }
+  }
+
   if (!response.ok) {
-    const error = new Error(data.error?.message || 'Vertex AI request failed');
+    const error = new Error(data?.error?.message || 'Vertex AI request failed');
     error.details = data;
     throw error;
   }
 
   return data;
+}
+
+function buildVertexError(response, raw, message) {
+  const err = new Error(message);
+  err.details = raw?.slice(0, 5000); // include snippet for debugging
+  err.status = response?.status;
+  return err;
 }
 
 function createSession(userId) {
@@ -78,14 +106,18 @@ function deleteSession(userId, sessionId) {
 }
 
 function streamQuery(userId, sessionId, message) {
-  return postToEngine(':streamQuery', {
-    class_method: 'async_stream_query',
-    input: {
-      user_id: userId,
-      session_id: sessionId,
-      message
-    }
-  });
+  return postToEngine(
+    ':streamQuery',
+    {
+      class_method: 'async_stream_query',
+      input: {
+        user_id: userId,
+        session_id: sessionId,
+        message
+      }
+    },
+    { ndjson: true }
+  );
 }
 
 async function getSessionOrCreate(userId) {

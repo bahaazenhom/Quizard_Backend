@@ -18,9 +18,10 @@ export const mcpServiceAuthentication = async (req, res, next) => {
         "mcpServiceAuthentication"
       );
     }
+    console.log(BACKEND_AUDIENCE);
 
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Service-Token ")) {
+    const authHeader = req.headers['authentication-service'];
+    if (!authHeader || !authHeader.startsWith("authentication-service ")) {
       return res
         .status(401)
         .json({ error: "Unauthorized: Missing or malformed token" });
