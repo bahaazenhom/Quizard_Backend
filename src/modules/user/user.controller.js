@@ -16,19 +16,58 @@ const analyticsService = new AnalyticsService();
 
 export class UserController {
   async registerUser(req, res, next) {
-    const userData = req.body;
-    const existingUser = await userService.getUserByEmail(userData.email);
-    if (existingUser) {
-      return next(
-        new ErrorClass("Email is already exits", 400, "Validation Error")
-      );
+    try {
+      const userData = req.body;
+      const existingUser = await userService.getUserByEmail(userData.email);
+      if (existingUser) {
+        return next(
+          new ErrorClass("Email is already exits", 400, "Validation Error")
+        );
+      }
+
+      // Find the free plan
+      const freePlan = await planModel.findOne({ price: 0, isActive: true });
+      if (!freePlan) {
+        return next(
+          new ErrorClass(
+            "Free plan not found. Please contact support.",
+            500,
+            "Free plan configuration error"
+          )
+        );
+      }
+
+      const newUser = await userService.createUser(userData);
+
+      // Create free subscription for the new user (renews every 30 days)
+      const startDate = moment().toDate();
+      const endDate = moment().add(30, "days").toDate();
+
+      const freeSubscription =
+        await subscriptionService.createOrUpdateSubscription({
+          user: newUser._id,
+          plan: freePlan._id,
+          status: "active",
+          isActive: true,
+          creditsAllocated: freePlan.credits,
+          creditsUsed: 0,
+          startDate,
+          endDate,
+          stripeSubscriptionId: `free_${newUser._id}`, // Unique identifier for free plan
+        });
+
+      // Update user with current subscription
+      await userService.updateUser(newUser._id, {
+        currentSubscription: freeSubscription._id,
+      });
+
+      res.status(201).json({
+        message: "User registered successfully with free plan",
+        user: newUser,
+      });
+    } catch (error) {
+      next(error);
     }
-
-    const newUser = await userService.createUser(userData);
-
-    res
-      .status(201)
-      .json({ message: "User registered successfully", user: newUser });
   }
 
   async confirmEmail(req, res) {

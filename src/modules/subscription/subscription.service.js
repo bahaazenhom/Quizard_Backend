@@ -1,4 +1,6 @@
 import Subscription from "../../models/subscription.model.js";
+import Plan from "../../models/plan.model.js";
+import moment from "moment";
 
 export class SubscriptionService {
   async createOrUpdateSubscription(data) {
@@ -42,6 +44,53 @@ export class SubscriptionService {
       );
     } catch (error) {
       throw new Error("Failed to deactivate subscription: " + error.message);
+    }
+  }
+
+  /**
+   * Renew free subscriptions that have expired
+   * Should be called by a cron job daily
+   */
+  async renewExpiredFreeSubscriptions() {
+    try {
+      const now = new Date();
+
+      // Find all expired free subscriptions
+      const expiredFreeSubscriptions = await Subscription.find({
+        stripeSubscriptionId: { $regex: /^free_/ },
+        endDate: { $lte: now },
+        isActive: true,
+      }).populate("plan");
+
+      const renewed = [];
+
+      for (const subscription of expiredFreeSubscriptions) {
+        // Only renew if it's still a free plan
+        if (subscription.plan && subscription.plan.price === 0) {
+          const newStartDate = moment().toDate();
+          const newEndDate = moment().add(30, "days").toDate();
+
+          await Subscription.findByIdAndUpdate(subscription._id, {
+            $set: {
+              startDate: newStartDate,
+              endDate: newEndDate,
+              creditsAllocated: subscription.plan.credits,
+              creditsUsed: 0, // Reset credits
+              status: "active",
+              isActive: true,
+            },
+          });
+
+          renewed.push(subscription._id);
+        }
+      }
+
+      return {
+        message: `Renewed ${renewed.length} free subscriptions`,
+        renewedSubscriptions: renewed,
+      };
+    } catch (error) {
+      throw new Error("Failed to renew free subscriptions: " + error.message);
     }
   }
 }
