@@ -32,6 +32,7 @@ const controller = new SubmissionController();
  *               quiz:
  *                 type: string
  *                 description: Quiz ObjectId
+ *                 example: "673a5f8c9d8b2c1f5e4a3c2b"
  *               answers:
  *                 type: array
  *                 description: Array of student answers (student ID and score are auto-calculated)
@@ -42,13 +43,23 @@ const controller = new SubmissionController();
  *                     question:
  *                       type: string
  *                       description: Question ObjectId
+ *                       example: "673a5f8c9d8b2c1f5e4a3c2b"
  *                     selectedIndex:
  *                       type: integer
  *                       description: Index of selected option (0-based)
+ *                       example: 2
+ *                 example:
+ *                   - question: "673a5f8c9d8b2c1f5e4a3c2b"
+ *                     selectedIndex: 2
+ *                   - question: "673a5f8c9d8b2c1f5e4a3c2c"
+ *                     selectedIndex: 1
+ *                   - question: "673a5f8c9d8b2c1f5e4a3c2d"
+ *                     selectedIndex: 0
  *               startedAt:
  *                 type: string
  *                 format: date-time
  *                 description: Optional - Quiz start time (defaults to now)
+ *                 example: "2025-11-21T10:00:00Z"
  *     responses:
  *       201:
  *         description: Submission created successfully with calculated score
