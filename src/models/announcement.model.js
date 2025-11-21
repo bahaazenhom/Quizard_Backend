@@ -1,17 +1,24 @@
 import mongoose from "mongoose";
 
-
 const announcementSchema = new mongoose.Schema(
   {
-    author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     text: { type: String, required: true },
     quiz: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz" },
-    group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" }
+    group: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      required: true,
+    },
   },
   { timestamps: true }
 );
 
-announcementSchema.index({group:1})
+announcementSchema.index({ group: 1 });
 
 export default mongoose.models.Announcement ||
   mongoose.model("Announcement", announcementSchema);

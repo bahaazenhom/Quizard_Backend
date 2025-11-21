@@ -12,6 +12,7 @@ import questionRouter from "./modules/Question/question.route.js";
 import submissionRouter from "./modules/Submission/submission.route.js";
 import quizRoutes from "./modules/Quiz/quiz.route.js";
 import moduleQuizRoutes from "./modules/ModuleQuiz/moduleQuiz.route.js";
+import { announcementRouter } from "./modules/announcement/announcement.route.js";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.config.js";
@@ -55,10 +56,12 @@ app.use("/api/v1/materials", materialRouter);
 app.use("/api/v1/modules", moduleRouter);
 app.use("/api/v1/quizzes", quizRoutes);
 app.use("/api/v1/module-quizzes", moduleQuizRoutes);
+app.use("/api/v1/announcements", announcementRouter);
 app.use("/api/v1/analytics", analyticsRouter);
 app.use("/api/v1/questions", questionRouter);
 app.use("/api/v1/submissions", submissionRouter);
 app.use("/api/v1/agent", agentRouter);
+
 // global error handler
 app.use(globalResponse);
 
