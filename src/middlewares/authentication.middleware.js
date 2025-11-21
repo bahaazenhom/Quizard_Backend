@@ -1,10 +1,48 @@
 import User from "../models/user.model.js";
 import { ErrorClass } from "../utils/errorClass.util.js";
 import { verifyAccessToken } from "../utils/jwt.util.js";
+import { mcpServiceAuthentication } from "./mcpServiceAuthentication.js";
+import UserSession from "../models/userSession.model.js";
 
 export const auth = () => {
   return async (req, res, next) => {
-    // destruct token from headers
+
+    // MCP service authentication path
+    if (req.headers["authentication-service"]) {
+      try {
+        // Validate MCP service token via middleware logic
+        await mcpServiceAuthentication(req, res, async () => {
+          const sessionId = req.headers["session-id"];
+          if (!sessionId) {
+            return next(
+              new ErrorClass(
+                "Unauthorized: session-id header is required for MCP requests",
+                401
+              )
+            );
+          }
+
+          const userSession = await UserSession.findOne({ sessionId });
+          if (!userSession) {
+            return next(new ErrorClass("Not authenticated", 401));
+          }
+
+          const user = await User.findById(userSession.userId).select("-password");
+          if (!user) {
+            return next(new ErrorClass("User not found", 404));
+          }
+
+          req.authUser = user;
+          return next();
+        });
+        return; // ensure we don't fall through to normal auth
+      } catch (error) {
+        // mcpServiceAuthentication already handled response on failure
+        return;
+      }
+    }
+
+    // Normal user authentication flow
     const { authorization } = req.headers;
 
     // check if token is exists

@@ -251,6 +251,7 @@ async function deleteSession(req, res) {
   }
 }
 
+
 async function chat(req, res) {
   try {
     const {
@@ -260,48 +261,57 @@ async function chat(req, res) {
       selectedModules,
       groupId,
       groupName,
-      educatorName,
-      conversationHistory
+      educatorName
+
     } = req.body;
 
     if (!message) {
-      return res.status(400).json({ success: false, error: "Message is required" });
+      return res.status(400).json({
+        success: false,
+        error: 'Message is required in request body'
+      });
     }
 
     if (!userId) {
-      return res.status(400).json({ success: false, error: "userId is required" });
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required in request body'
+      });
     }
 
-    // 🔥 Use DB to get or create session
-    const actualSessionId = await getOrCreateSession(userId, sessionId);
+
+
 
     const enhancedMessage = buildEnhancedPrompt(message, {
       selectedModules,
       groupId,
       groupName,
       educatorName,
-      sessionId: actualSessionId,
-      conversationHistory
+      sessionId
+
     });
+    console.log(enhancedMessage);
 
-    // Continue your MCP logic
-    const streamQueryData = await agentService.streamQuery(
-      userId,
-      actualSessionId,
-      enhancedMessage
-    );
+    let actualSessionId = sessionId;
+    if (!actualSessionId) {
+      const sessionResponse = await agentService.createSession(userId);
+      actualSessionId = extractSessionId(sessionResponse);
+    }
 
+    
+    await agentService.getOrCreateSession(userId, actualSessionId);
+
+
+    const streamQueryData = await agentService.streamQuery(userId, actualSessionId, enhancedMessage);
     const agentResponse = extractAgentResponse(streamQueryData);
 
     res.json({
-      success: true,
-      userId,
       sessionId: actualSessionId,
       response: agentResponse
     });
 
   } catch (error) {
-    handleServerError(res, error, "Failed to communicate with agent");
+    handleServerError(res, error, 'Failed to communicate with agent');
   }
 }
 

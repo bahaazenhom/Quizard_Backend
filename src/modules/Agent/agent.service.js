@@ -1,5 +1,6 @@
 import { GoogleAuth } from 'google-auth-library';
 import fetch from 'node-fetch';
+import ChatSession from '../../models/chatSession.model.js';
 
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID;
 const LOCATION = process.env.LOCATION || 'us-central1';
@@ -99,6 +100,11 @@ async function getOrCreateSession(userId, sessionId) {
       }
 
       return found.sessionId;
+    }
+    else {
+      // create new session in DB
+      const newSession = await ChatSession.create({ sessionId, userId });
+      return newSession.sessionId;
     }
   }
 }
