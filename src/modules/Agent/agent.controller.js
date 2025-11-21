@@ -290,17 +290,11 @@ async function chat(req, res) {
       sessionId
 
     });
-    console.log(enhancedMessage);
 
     let actualSessionId = sessionId;
     if (!actualSessionId) {
-      const sessionResponse = await agentService.createSession(userId);
-      actualSessionId = extractSessionId(sessionResponse);
+      actualSessionId = await agentService.getSessionOrCreate(userId);
     }
-
-    
-    await agentService.getOrCreateSession(userId, actualSessionId);
-
 
     const streamQueryData = await agentService.streamQuery(userId, actualSessionId, enhancedMessage);
     const agentResponse = extractAgentResponse(streamQueryData);

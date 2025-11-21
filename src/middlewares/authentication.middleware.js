@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 import { ErrorClass } from "../utils/errorClass.util.js";
 import { verifyAccessToken } from "../utils/jwt.util.js";
 import { mcpServiceAuthentication } from "./mcpServiceAuthentication.js";
-import UserSession from "../models/userSession.model.js";
+import UserSession from "../models/chatSession.model.js";
 
 export const auth = () => {
   return async (req, res, next) => {

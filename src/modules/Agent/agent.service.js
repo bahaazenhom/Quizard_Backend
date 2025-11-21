@@ -88,26 +88,38 @@ function streamQuery(userId, sessionId, message) {
   });
 }
 
-async function getOrCreateSession(userId, sessionId) {
-  // if sessionId is provided by frontend
-  if (sessionId) {
-    const found = await ChatSession.findOne({ sessionId });
-
-    if (found) {
-      // if the session belongs to a different user - handle as you want
-      if (found.userId.toString() !== userId.toString()) {
-        throw new Error("Session belongs to another user");
-      }
-
-      return found.sessionId;
-    }
-    else {
-      // create new session in DB
-      const newSession = await ChatSession.create({ sessionId, userId });
-      return newSession.sessionId;
-    }
+async function getSessionOrCreate(userId) {
+  if (!userId) {
+    throw new Error("userId is required to manage sessions");
   }
+
+  const found = await ChatSession.findOne({ userId });
+
+  if (found?.sessionId) {
+    await associateSessionToUser(userId, found.sessionId);
+    return found.sessionId;
+  }
+
+  const newSessionResponse = await createSession(userId);
+  const newSessionId =
+    newSessionResponse?.session_id ||
+    newSessionResponse?.output?.session_id ||
+    newSessionResponse?.output?.id ||
+    newSessionResponse?.id;
+
+  if (!newSessionId) {
+    throw new Error("Failed to create session for user");
+  }
+
+  await associateSessionToUser(userId, newSessionId);
+  return newSessionId;
 }
+
+async function associateSessionToUser(userId, sessionId) {
+  await ChatSession.create({ userId, sessionId });
+  return sessionId;
+}
+
 export default {
   PROJECT_ID,
   LOCATION,
@@ -118,5 +130,5 @@ export default {
   getSession,
   deleteSession,
   streamQuery,
-  getOrCreateSession
+  getSessionOrCreate
 };
