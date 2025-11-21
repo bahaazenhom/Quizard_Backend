@@ -9,7 +9,6 @@ export const auth = () => {
 
     // MCP service authentication path
     if (req.headers["authentication-service"]) {
-      console.log("the request is from mcp server");
       try {
         // Validate MCP service token via middleware logic
         await mcpServiceAuthentication(req, res, async () => {
@@ -22,7 +21,6 @@ export const auth = () => {
               )
             );
           }
-          console.log("MCP request with session ID:", sessionId);
 
           const userSession = await UserSession.findOne({ sessionId });
           if (!userSession) {

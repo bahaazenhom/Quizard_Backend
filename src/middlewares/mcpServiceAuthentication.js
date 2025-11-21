@@ -1,12 +1,15 @@
 import { OAuth2Client } from "google-auth-library";
 import { ErrorClass } from "../utils/errorClass.util.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const client = new OAuth2Client();
 const BACKEND_AUDIENCE = process.env.MCP_BACKEND_AUDIENCE;
 
 /**
  * Middleware to authenticate MCP service calls using a Google OIDC identity token.
- * Expects Authorization header formatted as: "Service-Token <token>"
+ * Expects header: "authentication-service: Bearer <token>"
  */
 export const mcpServiceAuthentication = async (req, res, next) => {
   try {
@@ -18,10 +21,8 @@ export const mcpServiceAuthentication = async (req, res, next) => {
         "mcpServiceAuthentication"
       );
     }
-    console.log(BACKEND_AUDIENCE);
-
-    const authHeader = req.headers['authentication-service'];
-    if (!authHeader || !authHeader.startsWith("authentication-service ")) {
+    const authHeader = req.headers["authentication-service"];
+    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
       return res
         .status(401)
         .json({ error: "Unauthorized: Missing or malformed token" });
