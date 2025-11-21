@@ -95,3 +95,5 @@ export const updateQuizValidation = Joi.object({
         "date.format": "End date must be in ISO format",
     }),
 }).options({ abortEarly: false, allowUnknown: true });
+
+export const updateQuizFromDetailsValidation = createQuizFromDetailsValidation;

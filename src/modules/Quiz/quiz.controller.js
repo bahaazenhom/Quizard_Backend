@@ -7,11 +7,32 @@ export class QuizController {
     async createQuizFromDetails(req, res, next) {
         try {
             const { quiz_details } = req.body;
-            const newQuiz = await quizService.createQuizWithDetails(quiz_details, req.user?._id);
+            const newQuiz = await quizService.createQuizWithDetails(
+                quiz_details,
+                req.authUser?._id || req.user?._id
+            );
             res.status(201).json({
                 success: true,
                 message: "Quiz created successfully",
                 data: newQuiz,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+    async updateQuizFromDetails(req, res, next) {
+        try {
+            const { quiz_details } = req.body;
+            const { id } = req.params;
+            const updatedQuiz = await quizService.updateQuizWithDetails(
+                id,
+                quiz_details,
+                req.authUser?._id || req.user?._id
+            );
+            res.status(200).json({
+                success: true,
+                message: "Quiz updated successfully",
+                data: updatedQuiz,
             });
         } catch (error) {
             next(error);
