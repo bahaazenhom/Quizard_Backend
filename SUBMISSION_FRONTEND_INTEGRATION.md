@@ -7,7 +7,7 @@
 ```typescript
 // services/submissionService.ts
 
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from "axios";
 
 interface Answer {
   question: string;
@@ -53,7 +53,7 @@ class SubmissionService {
       baseURL,
       withCredentials: true,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
   }
@@ -66,8 +66,10 @@ class SubmissionService {
     accessToken: string
   ): Promise<SubmissionResponse> {
     try {
-      const response = await this.apiClient.post<ApiResponse<SubmissionResponse>>(
-        '/submissions',
+      const response = await this.apiClient.post<
+        ApiResponse<SubmissionResponse>
+      >(
+        "/submissions",
         {
           ...request,
           startedAt: request.startedAt || new Date().toISOString(),
@@ -95,14 +97,13 @@ class SubmissionService {
    */
   async getSubmissions(accessToken: string): Promise<SubmissionResponse[]> {
     try {
-      const response = await this.apiClient.get<ApiResponse<SubmissionResponse[]>>(
-        '/submissions',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await this.apiClient.get<
+        ApiResponse<SubmissionResponse[]>
+      >("/submissions", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       return response.data.data;
     } catch (error: any) {
@@ -119,14 +120,13 @@ class SubmissionService {
     accessToken: string
   ): Promise<SubmissionResponse> {
     try {
-      const response = await this.apiClient.get<ApiResponse<SubmissionResponse>>(
-        `/submissions/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await this.apiClient.get<
+        ApiResponse<SubmissionResponse>
+      >(`/submissions/${id}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       return response.data.data;
     } catch (error: any) {
@@ -144,9 +144,9 @@ export default new SubmissionService();
 ```typescript
 // components/QuizPage.tsx
 
-import React, { useState, useEffect } from 'react';
-import submissionService from '../services/submissionService';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import submissionService from "../services/submissionService";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Question {
   _id: string;
@@ -180,7 +180,7 @@ const QuizPage: React.FC<{ quizId: string }> = ({ quizId }) => {
         });
         const data = await response.json();
         setQuestions(data.data);
-        
+
         // Initialize answers
         setAnswers(
           data.data.map((q: Question) => ({
@@ -189,7 +189,7 @@ const QuizPage: React.FC<{ quizId: string }> = ({ quizId }) => {
           }))
         );
       } catch (err) {
-        setError('Failed to load quiz questions');
+        setError("Failed to load quiz questions");
         console.error(err);
       }
     };
@@ -209,10 +209,10 @@ const QuizPage: React.FC<{ quizId: string }> = ({ quizId }) => {
   // Handle quiz submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate all questions answered
-    if (answers.some(a => a.selectedIndex === -1)) {
-      setError('Please answer all questions before submitting');
+    if (answers.some((a) => a.selectedIndex === -1)) {
+      setError("Please answer all questions before submitting");
       return;
     }
 
@@ -223,7 +223,7 @@ const QuizPage: React.FC<{ quizId: string }> = ({ quizId }) => {
       const submission = await submissionService.createSubmission(
         {
           quiz: quizId,
-          answers: answers.map(a => ({
+          answers: answers.map((a) => ({
             question: a.question,
             selectedIndex: a.selectedIndex,
           })),
@@ -248,7 +248,7 @@ const QuizPage: React.FC<{ quizId: string }> = ({ quizId }) => {
   return (
     <div className="quiz-container">
       <h1>Quiz</h1>
-      
+
       {error && <div className="error-message">{error}</div>}
 
       <form onSubmit={handleSubmit}>
@@ -272,12 +272,8 @@ const QuizPage: React.FC<{ quizId: string }> = ({ quizId }) => {
           </div>
         ))}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="submit-button"
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit Quiz'}
+        <button type="submit" disabled={isSubmitting} className="submit-button">
+          {isSubmitting ? "Submitting..." : "Submit Quiz"}
         </button>
       </form>
     </div>
@@ -292,7 +288,7 @@ export default QuizPage;
 ```typescript
 // components/ResultsView.tsx
 
-import React from 'react';
+import React from "react";
 
 interface Answer {
   question: string;
@@ -308,7 +304,7 @@ interface Submission {
 }
 
 const ResultsView: React.FC<{ submission: Submission }> = ({ submission }) => {
-  const correctAnswers = submission.answers.filter(a => a.isCorrect).length;
+  const correctAnswers = submission.answers.filter((a) => a.isCorrect).length;
   const totalQuestions = submission.answers.length;
   const percentage = Math.round((submission.scoreTotal / totalQuestions) * 100);
 
@@ -328,7 +324,9 @@ const ResultsView: React.FC<{ submission: Submission }> = ({ submission }) => {
         </div>
 
         <div className="score-card">
-          <div className="score-value">{correctAnswers}/{totalQuestions}</div>
+          <div className="score-value">
+            {correctAnswers}/{totalQuestions}
+          </div>
           <div className="score-label">Correct</div>
         </div>
       </div>
@@ -338,12 +336,14 @@ const ResultsView: React.FC<{ submission: Submission }> = ({ submission }) => {
         {submission.answers.map((answer, index) => (
           <div
             key={index}
-            className={`answer-item ${answer.isCorrect ? 'correct' : 'incorrect'}`}
+            className={`answer-item ${
+              answer.isCorrect ? "correct" : "incorrect"
+            }`}
           >
             <div className="answer-header">
               <span className="question-number">Question {index + 1}</span>
               <span className="answer-status">
-                {answer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
               </span>
             </div>
             <div className="answer-detail">
@@ -412,7 +412,7 @@ export default ResultsView;
 
 .option:hover {
   background: #f9f9f9;
-  border-color: #4CAF50;
+  border-color: #4caf50;
 }
 
 .option input[type="radio"] {
@@ -421,7 +421,7 @@ export default ResultsView;
 }
 
 .submit-button {
-  background: #4CAF50;
+  background: #4caf50;
   color: white;
   padding: 12px 30px;
   border: none;
@@ -535,9 +535,9 @@ export default ResultsView;
 ```typescript
 // App.tsx
 
-import React from 'react';
-import QuizPage from './components/QuizPage';
-import { AuthProvider } from './contexts/AuthContext';
+import React from "react";
+import QuizPage from "./components/QuizPage";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
   return (
@@ -564,24 +564,24 @@ export class SubmissionError extends Error {
     public originalError?: any
   ) {
     super(message);
-    this.name = 'SubmissionError';
+    this.name = "SubmissionError";
   }
 }
 
 export const handleSubmissionError = (error: any): string => {
   if (error.response?.status === 400) {
-    return 'Please answer all questions before submitting';
+    return "Please answer all questions before submitting";
   }
   if (error.response?.status === 401) {
-    return 'Your session has expired. Please login again';
+    return "Your session has expired. Please login again";
   }
   if (error.response?.status === 404) {
-    return 'Quiz or question not found';
+    return "Quiz or question not found";
   }
   if (error.response?.status === 500) {
-    return 'Server error. Please try again later';
+    return "Server error. Please try again later";
   }
-  return error.message || 'Failed to submit quiz';
+  return error.message || "Failed to submit quiz";
 };
 ```
 
@@ -592,8 +592,8 @@ export const handleSubmissionError = (error: any): string => {
 ```typescript
 // store/submissionSlice.ts
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import submissionService from '../services/submissionService';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import submissionService from "../services/submissionService";
 
 interface SubmissionState {
   submission: any | null;
@@ -608,7 +608,7 @@ const initialState: SubmissionState = {
 };
 
 export const submitQuiz = createAsyncThunk(
-  'submission/submitQuiz',
+  "submission/submitQuiz",
   async (
     {
       quiz,
@@ -640,7 +640,7 @@ export const submitQuiz = createAsyncThunk(
 );
 
 const submissionSlice = createSlice({
-  name: 'submission',
+  name: "submission",
   initialState,
   reducers: {
     resetSubmission: (state) => {
@@ -676,17 +676,17 @@ export default submissionSlice.reducer;
 ```typescript
 // __tests__/submissionService.test.ts
 
-import submissionService from '../services/submissionService';
+import submissionService from "../services/submissionService";
 
-describe('SubmissionService', () => {
-  const mockAccessToken = 'test_token';
-  const mockQuizId = 'quiz_123';
+describe("SubmissionService", () => {
+  const mockAccessToken = "test_token";
+  const mockQuizId = "quiz_123";
   const mockAnswers = [
-    { question: 'q1', selectedIndex: 0 },
-    { question: 'q2', selectedIndex: 1 },
+    { question: "q1", selectedIndex: 0 },
+    { question: "q2", selectedIndex: 1 },
   ];
 
-  test('should create submission and return results', async () => {
+  test("should create submission and return results", async () => {
     const result = await submissionService.createSubmission(
       {
         quiz: mockQuizId,
@@ -695,22 +695,21 @@ describe('SubmissionService', () => {
       mockAccessToken
     );
 
-    expect(result).toHaveProperty('scoreTotal');
-    expect(result).toHaveProperty('answers');
-    expect(result.answers[0]).toHaveProperty('isCorrect');
+    expect(result).toHaveProperty("scoreTotal");
+    expect(result).toHaveProperty("answers");
+    expect(result.answers[0]).toHaveProperty("isCorrect");
   });
 
-  test('should throw error on invalid token', async () => {
+  test("should throw error on invalid token", async () => {
     await expect(
       submissionService.createSubmission(
         {
           quiz: mockQuizId,
           answers: mockAnswers,
         },
-        'invalid_token'
+        "invalid_token"
       )
     ).rejects.toThrow();
   });
 });
 ```
-

@@ -71,43 +71,45 @@ curl -X DELETE http://localhost:5000/api/v1/submissions/SUBMISSION_ID \
 
 ```javascript
 const createSubmissionTest = async () => {
-  const accessToken = 'YOUR_ACCESS_TOKEN';
-  
+  const accessToken = "YOUR_ACCESS_TOKEN";
+
   const payload = {
-    quiz: '673a5f8c9d8b2c1f5e4a3c2b',
+    quiz: "673a5f8c9d8b2c1f5e4a3c2b",
     answers: [
-      { question: '673a5f8c9d8b2c1f5e4a3c2b', selectedIndex: 0 },
-      { question: '673a5f8c9d8b2c1f5e4a3c2c', selectedIndex: 2 },
-      { question: '673a5f8c9d8b2c1f5e4a3c2d', selectedIndex: 1 }
+      { question: "673a5f8c9d8b2c1f5e4a3c2b", selectedIndex: 0 },
+      { question: "673a5f8c9d8b2c1f5e4a3c2c", selectedIndex: 2 },
+      { question: "673a5f8c9d8b2c1f5e4a3c2d", selectedIndex: 1 },
     ],
-    startedAt: new Date().toISOString()
+    startedAt: new Date().toISOString(),
   };
 
   try {
-    const response = await fetch('http://localhost:5000/api/v1/submissions', {
-      method: 'POST',
+    const response = await fetch("http://localhost:5000/api/v1/submissions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-      credentials: 'include',
-      body: JSON.stringify(payload)
+      credentials: "include",
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
-    
-    console.log('Status:', response.status);
-    console.log('Response:', result);
-    
+
+    console.log("Status:", response.status);
+    console.log("Response:", result);
+
     if (result.data) {
-      console.log('Score:', result.data.scoreTotal);
-      console.log('Answers:');
+      console.log("Score:", result.data.scoreTotal);
+      console.log("Answers:");
       result.data.answers.forEach((answer, index) => {
-        console.log(`  Q${index + 1}: ${answer.isCorrect ? 'Correct ✓' : 'Incorrect ✗'}`);
+        console.log(
+          `  Q${index + 1}: ${answer.isCorrect ? "Correct ✓" : "Incorrect ✗"}`
+        );
       });
     }
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
   }
 };
 
@@ -118,29 +120,29 @@ createSubmissionTest();
 
 ```javascript
 const getSubmissionTest = async (submissionId) => {
-  const accessToken = 'YOUR_ACCESS_TOKEN';
+  const accessToken = "YOUR_ACCESS_TOKEN";
 
   try {
     const response = await fetch(
       `http://localhost:5000/api/v1/submissions/${submissionId}`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
-        credentials: 'include'
+        credentials: "include",
       }
     );
 
     const result = await response.json();
-    console.log('Submission:', result.data);
+    console.log("Submission:", result.data);
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
   }
 };
 
-getSubmissionTest('SUBMISSION_ID');
+getSubmissionTest("SUBMISSION_ID");
 ```
 
 ---
@@ -266,19 +268,25 @@ Before testing, ensure you have:
 ## Common Issues
 
 ### Issue: 401 Unauthorized
+
 **Solution**: Ensure your access token is valid and not expired. Get a fresh token from login.
 
 ### Issue: 404 One or more questions not found
+
 **Solution**: Verify that the question IDs you're using actually exist in the database.
 
 ### Issue: 400 Answers array is required
+
 **Solution**: Make sure you're sending an `answers` array with at least one answer.
 
 ### Issue: Student ID not matching
+
 **Solution**: The `student` field is automatically set from the authenticated user (`req.authUser._id`). You don't need to send it.
 
 ### Issue: Score always 0
+
 **Solution**: Check that:
+
 1. Questions have `point` field set
 2. `correctOptionIndex` is properly set on questions
 3. Student's `selectedIndex` matches the correct index
@@ -304,4 +312,3 @@ Before testing, ensure you have:
 - [ ] Set up error tracking/monitoring
 - [ ] Validate all user inputs before submission
 - [ ] Add anti-cheating mechanisms (time limits, IP tracking, etc.)
-
