@@ -10,17 +10,11 @@ const subscriptionService = new SubscriptionService();
 export const scheduleFreeSubscriptionRenewal = () => {
   cron.schedule("0 0 * * *", async () => {
     try {
-      console.log("[CRON] Starting free subscription renewal check...");
-      const result = await subscriptionService.renewExpiredFreeSubscriptions();
-      console.log(`[CRON] ${result.message}`);
+      await subscriptionService.renewExpiredFreeSubscriptions();
     } catch (error) {
       console.error("[CRON] Error renewing free subscriptions:", error.message);
     }
   });
-
-  console.log(
-    "[CRON] Free subscription renewal job scheduled (daily at midnight)"
-  );
 };
 
 /**

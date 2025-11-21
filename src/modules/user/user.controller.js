@@ -1,10 +1,7 @@
 import moment from "moment";
 import { UserService } from "./user.service.js";
 import UserProfileService from "./userProfile.service.js";
-import {
-  generateAccessToken,
-  verifyAccessToken,
-} from "../../utils/jwt.util.js";
+import { generateAccessToken } from "../../utils/jwt.util.js";
 import { cloudinaryConfig } from "../../config/cloudinary.config.js";
 import { ErrorClass } from "../../utils/errorClass.util.js";
 import planModel from "../../models/plan.model.js";

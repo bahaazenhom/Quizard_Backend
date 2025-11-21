@@ -4,6 +4,7 @@ import planRouter from "./modules/plan/plan.router.js";
 import userRouter from "./modules/user/user.route.js";
 import groupRouter from "./modules/Group/group.route.js";
 import subscriptionRouter from "./modules/subscription/subscription.route.js";
+import aiCreditRouter from "./modules/aiCredit/aicredit.route.js";
 import materialRouter from "./modules/Material/material.route.js";
 import moduleRouter from "./modules/Module/module.route.js";
 import analyticsRouter from "./modules/analytics/analytics.route.js";
@@ -49,6 +50,7 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/groups", groupRouter);
 app.use("/api/v1/plans", planRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
+app.use("/api/v1/ai-credits", aiCreditRouter);
 app.use("/api/v1/materials", materialRouter);
 app.use("/api/v1/modules", moduleRouter);
 app.use("/api/v1/quizzes", quizRoutes);
@@ -61,5 +63,3 @@ app.use("/api/v1/agent", agentRouter);
 app.use(globalResponse);
 
 export default app;
-
-

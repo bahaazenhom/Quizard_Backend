@@ -61,6 +61,54 @@ export class SubscriptionController {
     }
   }
 
+  async subscribeFreePlan(req, res, next) {
+    try {
+      const { planId } = req.body;
+      const user = req.authUser;
+      const plan = await Plan.findById(planId);
+      if (!plan)
+        return next(
+          new ErrorClass("Plan not found", 404, null, "createCheckoutSession")
+        );
+
+      // Create free subscription for the new user (renews every 30 days)
+      const startDate = moment().toDate();
+      const endDate = moment().add(30, "days").toDate();
+
+      const freeSubscription =
+        await subscriptionService.createOrUpdateSubscription({
+          user: user._id,
+          plan: plan._id,
+          status: "active",
+          isActive: true,
+          creditsAllocated: plan.credits,
+          creditsUsed: 0,
+          startDate,
+          endDate,
+          stripeSubscriptionId: `free_${newUser._id}`,
+        });
+
+      // Update user with current subscription
+      await userService.updateUser(newUser._id, {
+        currentSubscription: freeSubscription._id,
+      });
+
+      res.status(201).json({
+        message: "User registered successfully with free plan",
+        user: newUser,
+      });
+    } catch (error) {
+      next(
+        new ErrorClass(
+          "Failed to create checkout session",
+          500,
+          error.message,
+          "createCheckoutSession"
+        )
+      );
+    }
+  }
+
   // ------------------------------------------------------
   // 2) Handle Webhook - FIXED VERSION
   // ------------------------------------------------------
