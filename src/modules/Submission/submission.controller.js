@@ -6,24 +6,18 @@ export class SubmissionController {
   async createSubmission(req, res, next) {
     try {
       const submissionData = {
-        ...req.body,
+        quiz: req.body.quiz,
+        answers: req.body.answers || [],
         student: req.authUser._id, // Automatically set student ID from authenticated user
+        startedAt: req.body.startedAt,
       };
-      const result = await submissionService.createSubmission(submissionData);
-
-      // Handle case where no answers are selected
-      if (result.success === false) {
-        return res.status(200).json({
-          success: true,
-          message: result.message,
-          data: result,
-        });
-      }
-
+      const submission = await submissionService.createSubmission(
+        submissionData
+      );
       res.status(201).json({
         success: true,
-        message: "Submission created successfully",
-        data: result,
+        message: "Submission created successfully with feedback",
+        data: submission,
       });
     } catch (error) {
       next(error);

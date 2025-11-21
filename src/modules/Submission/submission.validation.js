@@ -2,7 +2,7 @@ import Joi from "joi";
 
 const answerSchema = Joi.object({
   question: Joi.string().trim().required(),
-  selectedIndex: Joi.number().integer().min(0).required(),
+  selectedIndex: Joi.number().integer().min(-1).required(),
   isCorrect: Joi.boolean().optional(),
 });
 

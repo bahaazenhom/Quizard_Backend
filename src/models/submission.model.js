@@ -5,7 +5,11 @@ const submissionSchema = new mongoose.Schema({
   answers: [
     {
       question: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
+      questionText: String,
+      options: [String],
+      point: Number,
       selectedIndex: Number,
+      correctOptionIndex: Number,
       isCorrect: Boolean,
     },
   ],
