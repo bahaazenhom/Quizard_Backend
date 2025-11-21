@@ -17,7 +17,7 @@ const controller = new SubmissionController();
  * @swagger
  * /api/v1/submissions:
  *   post:
- *     summary: Create a submission
+ *     summary: Create a submission with automatic score calculation
  *     tags: [Submissions]
  *     security:
  *       - bearerAuth: []
@@ -27,25 +27,62 @@ const controller = new SubmissionController();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [quiz, student, answers]
+ *             required: [quiz, answers]
  *             properties:
- *               quiz: { type: string, description: "Quiz ObjectId" }
- *               student: { type: string, description: "Student ObjectId" }
+ *               quiz:
+ *                 type: string
+ *                 description: Quiz ObjectId
  *               answers:
  *                 type: array
+ *                 description: Array of student answers (student ID and score are auto-calculated)
  *                 items:
  *                   type: object
+ *                   required: [question, selectedIndex]
  *                   properties:
- *                     question: { type: string }
- *                     selectedIndex: { type: integer }
- *                     isCorrect: { type: boolean }
- *               scoreTotal: { type: number }
- *               startedAt: { type: string, format: date-time }
- *               submittedAt: { type: string, format: date-time }
+ *                     question:
+ *                       type: string
+ *                       description: Question ObjectId
+ *                     selectedIndex:
+ *                       type: integer
+ *                       description: Index of selected option (0-based)
+ *               startedAt:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Optional - Quiz start time (defaults to now)
  *     responses:
- *       201: { description: Submission created }
- *       400: { $ref: '#/components/responses/ValidationError' }
+ *       201:
+ *         description: Submission created successfully with calculated score
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 message: { type: string }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id: { type: string }
+ *                     quiz: { type: string }
+ *                     student: { type: string }
+ *                     scoreTotal:
+ *                       type: number
+ *                       description: Total calculated score
+ *                     answers:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           question: { type: string }
+ *                           selectedIndex: { type: integer }
+ *                           isCorrect: { type: boolean }
+ *                     startedAt: { type: string, format: date-time }
+ *                     submittedAt: { type: string, format: date-time }
+ *       400:
+ *         description: Validation error or empty answers array
  *       401: { $ref: '#/components/responses/UnauthorizedError' }
+ *       404:
+ *         description: One or more questions not found
  */
 router.post(
   "/",

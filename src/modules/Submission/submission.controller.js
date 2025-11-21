@@ -5,8 +5,18 @@ const submissionService = new SubmissionService();
 export class SubmissionController {
   async createSubmission(req, res, next) {
     try {
-      const submission = await submissionService.createSubmission(req.body);
-      res.status(201).json({ success: true, data: submission });
+      const submissionData = {
+        ...req.body,
+        student: req.authUser._id, // Automatically set student ID from authenticated user
+      };
+      const submission = await submissionService.createSubmission(
+        submissionData
+      );
+      res.status(201).json({
+        success: true,
+        message: "Submission created successfully",
+        data: submission,
+      });
     } catch (error) {
       next(error);
     }
@@ -23,7 +33,9 @@ export class SubmissionController {
 
   async getSubmissionById(req, res, next) {
     try {
-      const submission = await submissionService.getSubmissionById(req.params.id);
+      const submission = await submissionService.getSubmissionById(
+        req.params.id
+      );
       res.status(200).json({ success: true, data: submission });
     } catch (error) {
       next(error);
@@ -32,7 +44,10 @@ export class SubmissionController {
 
   async updateSubmission(req, res, next) {
     try {
-      const updated = await submissionService.updateSubmission(req.params.id, req.body);
+      const updated = await submissionService.updateSubmission(
+        req.params.id,
+        req.body
+      );
       res.status(200).json({ success: true, data: updated });
     } catch (error) {
       next(error);
