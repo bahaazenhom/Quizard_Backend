@@ -21,6 +21,9 @@ import { nanoid } from "nanoid";
  *           type: string
  *           description: URL to group cover image
  *           example: https://example.com/cover.jpg
+ *         ownerName:
+ *           type: string
+ *           description: Cached owner full name for easy display
  *         owner:
  *           type: string
  *           description: Reference to User who owns the group
@@ -48,6 +51,7 @@ const groupSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     coverUrl: String,
+    ownerName: { type: String },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     inviteCode: { type: String },
     inviteExpiredAt: Date,

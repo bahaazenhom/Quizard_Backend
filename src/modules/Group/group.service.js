@@ -59,7 +59,7 @@ export class GroupService {
         .select("-_id")
         .populate({
           path: "group",
-          select: "title owner inviteCode coverUrl",
+          select: "title owner ownerName inviteCode coverUrl",
           populate: {
             path: "owner",
             select: "firstName lastName",
@@ -116,6 +116,7 @@ export class GroupService {
       const createdGroup = await Group.create({
         ...data,
         owner: authUser._id,
+        ownerName: [authUser.firstName, authUser.lastName].filter(Boolean).join(" ").trim(),
       });
       const teachingCourses = authUser.teachingCourses;
       await User.findByIdAndUpdate(
