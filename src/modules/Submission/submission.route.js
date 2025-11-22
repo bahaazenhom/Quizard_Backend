@@ -205,4 +205,106 @@ router.delete(
   errorHandler(controller.deleteSubmission)
 );
 
+/**
+ * @swagger
+ * /api/v1/submissions/check-taken:
+ *   post:
+ *     summary: Check if a user has taken a specific quiz
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userId, quizId]
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: User ObjectId
+ *                 example: "673a5f8c9d8b2c1f5e4a3c2b"
+ *               quizId:
+ *                 type: string
+ *                 description: Quiz ObjectId
+ *                 example: "673a5f8c9d8b2c1f5e4a3c2c"
+ *     responses:
+ *       200:
+ *         description: Quiz taken status retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     isTaken:
+ *                       type: boolean
+ *                       description: Whether the user has taken the quiz
+ *                     submission:
+ *                       type: object
+ *                       description: The submission object if exists, null otherwise
+ *       401: { $ref: '#/components/responses/UnauthorizedError' }
+ */
+router.post("/check-taken", auth(), errorHandler(controller.checkQuizTaken));
+
+/**
+ * @swagger
+ * /api/v1/submissions/quiz/{quizId}/result:
+ *   get:
+ *     summary: Get student's submission result for a specific quiz
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: quizId
+ *         required: true
+ *         schema: { type: string }
+ *         description: Quiz ObjectId
+ *         example: "673a5f8c9d8b2c1f5e4a3c2c"
+ *     responses:
+ *       200:
+ *         description: Submission retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 message: { type: string }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id: { type: string }
+ *                     quiz: { type: object }
+ *                     student: { type: object }
+ *                     scoreTotal: { type: number }
+ *                     totalQuizPoints: { type: number }
+ *                     answers:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           questionText: { type: string }
+ *                           options: { type: array, items: { type: string } }
+ *                           point: { type: number }
+ *                           selectedIndex: { type: integer }
+ *                           correctOptionIndex: { type: integer }
+ *                           isCorrect: { type: boolean }
+ *                     startedAt: { type: string, format: date-time }
+ *                     submittedAt: { type: string, format: date-time }
+ *       401: { $ref: '#/components/responses/UnauthorizedError' }
+ *       404:
+ *         description: Submission not found for this quiz
+ */
+router.get(
+  "/quiz/:quizId/result",
+  auth(),
+  errorHandler(controller.getSubmissionByQuizAndStudent)
+);
+
 export default router;

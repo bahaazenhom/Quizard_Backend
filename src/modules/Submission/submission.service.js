@@ -194,4 +194,55 @@ export class SubmissionService {
       );
     }
   }
+
+  async checkQuizTaken(userId, quizId) {
+    try {
+      const submission = await Submission.findOne({
+        student: userId,
+        quiz: quizId,
+      });
+
+      return {
+        isTaken: !!submission,
+        submission: submission || null,
+      };
+    } catch (error) {
+      throw new ErrorClass(
+        "Failed to check quiz status",
+        500,
+        error.message,
+        "SubmissionService.checkQuizTaken"
+      );
+    }
+  }
+
+  async getSubmissionByQuizAndStudent(quizId, studentId) {
+    try {
+      const submission = await Submission.findOne({
+        quiz: quizId,
+        student: studentId,
+      })
+        .populate("quiz")
+        .populate("student", "firstName lastName email");
+
+      if (!submission) {
+        throw new ErrorClass(
+          "Submission not found for this quiz",
+          404,
+          null,
+          "SubmissionService.getSubmissionByQuizAndStudent"
+        );
+      }
+
+      return submission;
+    } catch (error) {
+      if (error instanceof ErrorClass) throw error;
+      throw new ErrorClass(
+        "Failed to fetch submission",
+        500,
+        error.message,
+        "SubmissionService.getSubmissionByQuizAndStudent"
+      );
+    }
+  }
 }

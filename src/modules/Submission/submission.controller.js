@@ -64,4 +64,35 @@ export class SubmissionController {
       next(error);
     }
   }
+
+  async checkQuizTaken(req, res, next) {
+    try {
+      const { userId, quizId } = req.body;
+      const result = await submissionService.checkQuizTaken(userId, quizId);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSubmissionByQuizAndStudent(req, res, next) {
+    try {
+      const { quizId } = req.params;
+      const studentId = req.authUser._id; // Get student ID from authenticated user
+      const submission = await submissionService.getSubmissionByQuizAndStudent(
+        quizId,
+        studentId
+      );
+      res.status(200).json({
+        success: true,
+        message: "Submission retrieved successfully",
+        data: submission,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
