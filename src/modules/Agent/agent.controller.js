@@ -290,8 +290,7 @@ async function chat(req, res) {
       groupId,
       groupName,
       educatorName,
-      sessionId
-
+      actualSessionId
     });
 
     const streamQueryData = await agentService.streamQuery(userId, actualSessionId, enhancedMessage);

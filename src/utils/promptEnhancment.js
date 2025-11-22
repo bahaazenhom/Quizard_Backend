@@ -8,12 +8,12 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
     groupId = '',
     groupName = '',
     educatorName = '',
-    sessionId = '',
+    actualSessionId = '',
     timestamp = new Date().toISOString()
   } = context || {};
 
   const hasContext =
-    sessionId ||
+    actualSessionId ||
     (Array.isArray(selectedModules) && selectedModules.length > 0) ||
     safeValue(groupId) ||
     safeValue(groupName) ||
@@ -28,7 +28,7 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
 
   promptContext += `<prompt_context>
 <session_info>
-  <sessionId>${safeValue(sessionId)}</sessionId>
+  <sessionId>${safeValue(actualSessionId)}</sessionId>
   <educator_name>${safeValue(educatorName)}</educator_name>
   <group_id>${safeValue(groupId)}</group_id>
   <group_name>${safeValue(groupName)}</group_name>
