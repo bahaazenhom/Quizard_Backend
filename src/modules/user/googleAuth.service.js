@@ -108,7 +108,7 @@ class GoogleAuthService {
     const { user, isNewUser } = await this.findOrCreateUser(googleUserData);
 
     // Generate JWT token
-    const token = generateAccessToken({ id: user._id });
+    const token = generateAccessToken({ userId: user._id });
 
     // Return user without password
     const userObject = user.toObject();

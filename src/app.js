@@ -25,11 +25,18 @@ import agentRouter from "./modules/Agent/agent.routes.js";
 const subscriptionController = new SubscriptionController();
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: false, // Allow Google OAuth popup
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(
   cors({
     origin: ["http://localhost:5173", "https://quizzard-frontend.vercel.app"],
     credentials: true,
+    exposedHeaders: ["set-cookie"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
