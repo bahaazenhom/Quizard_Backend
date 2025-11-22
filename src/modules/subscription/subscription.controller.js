@@ -37,8 +37,8 @@ export class SubscriptionController {
         mode: "subscription",
         customer_email: user.email,
         line_items: [{ price: plan.stripePriceId, quantity: 1 }],
-        success_url: `http://localhost:5173/subscription/success`,
-        cancel_url: `http://localhost:5173/subscription/cancel`,
+        success_url: `https://quizzard-frontend.vercel.app/subscription/success`,
+        cancel_url: `https://quizzard-frontend.vercel.app/subscription/cancel`,
         metadata: { userId: user._id.toString(), planId: plan._id.toString() },
         subscription_data: {
           metadata: {

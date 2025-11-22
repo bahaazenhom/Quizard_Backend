@@ -1,4 +1,5 @@
 import { GroupService } from "./group.service.js";
+import { cloudinaryConfig } from "../../config/cloudinary.config.js";
 
 const groupService = new GroupService();
 
@@ -33,15 +34,31 @@ export class GroupController {
 
   async createGroup(req, res, next) {
     try {
+      let coverUrl;
+
+      if (req.file) {
+        const upload = await cloudinaryConfig().uploader.upload(req.file.path, {
+          folder: "group_photos",
+          resource_type: "image",
+          use_filename: true,
+        });
+        coverUrl = upload.secure_url;
+      }
+
       const createdGroup = await groupService.createGroup(
-        req.body,
+        { ...req.body, coverUrl },
         req.authUser
       );
-      res.status(201).json({ success: true, data: createdGroup });
+
+      res.status(201).json({
+        success: true,
+        data: createdGroup,
+      });
     } catch (error) {
       next(error);
     }
   }
+
 
   async joinGroup(req, res, next) {
     try {

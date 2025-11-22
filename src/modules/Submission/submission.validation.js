@@ -8,7 +8,7 @@ const answerSchema = Joi.object({
 
 export const createSubmissionSchema = Joi.object({
   quiz: Joi.string().trim().required(),
-  student: Joi.string().trim().required(),
+  student: Joi.string().trim().optional(), // Auto-set from authenticated user
   answers: Joi.array().items(answerSchema).min(1).required(),
   scoreTotal: Joi.number().min(0).optional(),
   startedAt: Joi.date().optional(),

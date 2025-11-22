@@ -279,28 +279,19 @@ async function chat(req, res) {
       });
     }
 
-
-
+    let actualSessionId = sessionId;
+    if (!actualSessionId) {
+      actualSessionId = await agentService.createSession(userId);
+      await agentService.associateSessionToUser(userId, actualSessionId);
+    }
 
     const enhancedMessage = buildEnhancedPrompt(message, {
       selectedModules,
       groupId,
       groupName,
       educatorName,
-      sessionId
-
+      actualSessionId
     });
-    console.log(enhancedMessage);
-
-    let actualSessionId = sessionId;
-    if (!actualSessionId) {
-      const sessionResponse = await agentService.createSession(userId);
-      actualSessionId = extractSessionId(sessionResponse);
-    }
-
-    
-    await agentService.getOrCreateSession(userId, actualSessionId);
-
 
     const streamQueryData = await agentService.streamQuery(userId, actualSessionId, enhancedMessage);
     const agentResponse = extractAgentResponse(streamQueryData);

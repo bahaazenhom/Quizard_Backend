@@ -121,17 +121,17 @@ export class GroupService {
           .join(" ")
           .trim(),
       });
-      const teachingCourses = authUser.teachingCourses;
       await User.findByIdAndUpdate(
         authUser._id,
-        { $inc: { teachingCourses: 1 } },
-        { new: true }
+        { $inc: { teachingCourses: 1 } }
       );
+
       await GroupMember.create({
         group: createdGroup._id,
         user: authUser._id,
         role: "teacher",
       });
+
       return createdGroup;
     } catch (error) {
       throw new ErrorClass(
@@ -141,6 +141,25 @@ export class GroupService {
         "groupService.createGroup"
       );
     }
+  }
+
+
+  async updateGroupPhoto(userId, photoURL) {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user ID");
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { photoURL },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
   }
 
   async joinGroup(data, userId) {

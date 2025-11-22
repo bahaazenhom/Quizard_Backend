@@ -8,12 +8,12 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
     groupId = '',
     groupName = '',
     educatorName = '',
-    sessionId = '',
+    actualSessionId = '',
     timestamp = new Date().toISOString()
   } = context || {};
 
   const hasContext =
-    sessionId ||
+    actualSessionId ||
     (Array.isArray(selectedModules) && selectedModules.length > 0) ||
     safeValue(groupId) ||
     safeValue(groupName) ||
@@ -28,7 +28,7 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
 
   promptContext += `<prompt_context>
 <session_info>
-  <sessionId>${safeValue(sessionId)}</sessionId>
+  <sessionId>${safeValue(actualSessionId)}</sessionId>
   <educator_name>${safeValue(educatorName)}</educator_name>
   <group_id>${safeValue(groupId)}</group_id>
   <group_name>${safeValue(groupName)}</group_name>
@@ -59,6 +59,7 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
 - Workflow: Parse context → fetch materials per module → gather all quiz requirements → generate questions → validate → preview → wait for explicit approval → submit quiz → post announcement.
 - Tools: Always pass sessionId; parse JSON; check success; handle failures with educator-friendly messages only.
 - Scope: Stay within provided materials; do not invent content; balance coverage across selected modules.
+- If he provided the selected modules at the beginning, do not ask for them again and use them directly.
 </agent_instructions>
 </prompt_context>
 

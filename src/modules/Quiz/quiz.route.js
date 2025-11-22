@@ -8,6 +8,7 @@ import {
   createQuizValidation,
   updateQuizValidation,
   createQuizFromDetailsValidation,
+  updateQuizFromDetailsValidation,
 } from "./quiz.validation.js";
 import { validate } from "../../middlewares/validation.middleware.js";
 
@@ -98,6 +99,14 @@ router.post(
   errorHandler(quizController.createQuizFromDetails)
 );
 
+router.put(
+  "/from-details/:id",  
+  auth(),
+  authorization(systemRoles.USER, systemRoles.ADMIN),
+  validate(updateQuizFromDetailsValidation),
+  errorHandler(quizController.updateQuizFromDetails)
+);
+
 /**
  * @swagger
  * /api/v1/quizzes:
@@ -153,7 +162,7 @@ router.post(
 router.post(
     "/",
     auth(),
-    authorization(systemRoles.USER_ADMIN),
+    authorization(systemRoles.INSTRUCTOR, systemRoles.ADMIN),
     validate(createQuizValidation),
     errorHandler(quizController.createQuiz)
 );
@@ -287,7 +296,7 @@ router.get("/:id", auth(), errorHandler(quizController.getQuizById));
 router.put(
     "/:id",
     auth(),
-    authorization(systemRoles.INSTRUCTOR, systemRoles.ADMIN),
+    authorization(systemRoles.USER, systemRoles.ADMIN),
     validate(updateQuizValidation),
     errorHandler(quizController.updateQuiz)
 );
@@ -320,7 +329,7 @@ router.put(
 router.delete(
     "/:id",
     auth(),
-    authorization(systemRoles.INSTRUCTOR, systemRoles.ADMIN),
+    authorization(systemRoles.USER, systemRoles.ADMIN),
     errorHandler(quizController.deleteQuiz)
 );
 

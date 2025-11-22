@@ -22,7 +22,7 @@ async function getAccessToken() {
 
 const BASE_URL = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/reasoningEngines/${REASONING_ENGINE_ID}`;
 
-async function postToEngine(endpoint, payload) {
+async function postToEngine(endpoint, payload, { ndjson = false } = {}) {
   const token = await getAccessToken();
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: 'POST',
@@ -33,9 +33,30 @@ async function postToEngine(endpoint, payload) {
     body: JSON.stringify(payload)
   });
 
-  const data = await response.json();
+  const raw = await response.text();
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (parseErr) {
+    if (ndjson) {
+      // Try to parse first JSON line from streaming/NDJSON response
+      const firstLine = raw.split('\n').find((line) => line.trim().length > 0);
+      if (firstLine) {
+        try {
+          data = JSON.parse(firstLine);
+        } catch (err) {
+          throw buildVertexError(response, raw, "Vertex AI request failed (invalid NDJSON)");
+        }
+      } else {
+        throw buildVertexError(response, raw, "Vertex AI request failed (empty stream)");
+      }
+    } else {
+      throw buildVertexError(response, raw, "Vertex AI request failed (invalid JSON)");
+    }
+  }
+
   if (!response.ok) {
-    const error = new Error(data.error?.message || 'Vertex AI request failed');
+    const error = new Error(data?.error?.message || 'Vertex AI request failed');
     error.details = data;
     throw error;
   }
@@ -43,11 +64,30 @@ async function postToEngine(endpoint, payload) {
   return data;
 }
 
-function createSession(userId) {
-  return postToEngine(':query', {
+function buildVertexError(response, raw, message) {
+  const err = new Error(message);
+  err.details = raw?.slice(0, 5000); // include snippet for debugging
+  err.status = response?.status;
+  return err;
+}
+
+async function createSession(userId) {
+  const response = await postToEngine(':query', {
     class_method: 'async_create_session',
     input: { user_id: userId }
   });
+
+  const sessionId =
+    response?.session_id ||
+    response?.output?.session_id ||
+    response?.output?.id ||
+    response?.id;
+
+  if (!sessionId) {
+    throw new Error('Failed to create session');
+  }
+
+  return sessionId;
 }
 
 function listSessions(userId) {
@@ -78,36 +118,54 @@ function deleteSession(userId, sessionId) {
 }
 
 function streamQuery(userId, sessionId, message) {
-  return postToEngine(':streamQuery', {
-    class_method: 'async_stream_query',
-    input: {
-      user_id: userId,
-      session_id: sessionId,
-      message
-    }
-  });
-}
-
-async function getOrCreateSession(userId, sessionId) {
-  // if sessionId is provided by frontend
-  if (sessionId) {
-    const found = await ChatSession.findOne({ sessionId });
-
-    if (found) {
-      // if the session belongs to a different user - handle as you want
-      if (found.userId.toString() !== userId.toString()) {
-        throw new Error("Session belongs to another user");
+  return postToEngine(
+    ':streamQuery',
+    {
+      class_method: 'async_stream_query',
+      input: {
+        user_id: userId,
+        session_id: sessionId,
+        message
       }
-
-      return found.sessionId;
-    }
-    else {
-      // create new session in DB
-      const newSession = await ChatSession.create({ sessionId, userId });
-      return newSession.sessionId;
-    }
-  }
+    },
+    { ndjson: true }
+  );
 }
+
+async function getSessionOrCreate(userId) {
+  if (!userId) {
+    throw new Error("userId is required to manage sessions");
+  }
+
+  const found = await ChatSession.findOne({ userId });
+
+  if (found?.sessionId) {
+    await associateSessionToUser(userId, found.sessionId);
+    return found.sessionId;
+  }
+
+
+  const newSessionResponse = await createSession(userId);
+  const newSessionId =
+    newSessionResponse?.session_id ||
+    newSessionResponse?.output?.session_id ||
+    newSessionResponse?.output?.id ||
+    newSessionResponse?.id;
+
+  if (!newSessionId) {
+    throw new Error("Failed to create session for user");
+  }
+
+  await associateSessionToUser(userId, newSessionId);
+  return newSessionId;
+}
+
+async function associateSessionToUser(userId, sessionId) {
+  if((await ChatSession.findOne({ userId, sessionId })))return sessionId;
+  await ChatSession.create({ userId, sessionId });
+  return sessionId;
+}
+
 export default {
   PROJECT_ID,
   LOCATION,
@@ -118,5 +176,6 @@ export default {
   getSession,
   deleteSession,
   streamQuery,
-  getOrCreateSession
+  getSessionOrCreate,
+  associateSessionToUser
 };
