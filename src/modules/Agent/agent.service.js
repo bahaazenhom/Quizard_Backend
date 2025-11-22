@@ -39,17 +39,31 @@ async function postToEngine(endpoint, payload, { ndjson = false } = {}) {
     data = JSON.parse(raw);
   } catch (parseErr) {
     if (ndjson) {
-      // Try to parse first JSON line from streaming/NDJSON response
-      const firstLine = raw.split('\n').find((line) => line.trim().length > 0);
-      if (firstLine) {
-        try {
-          data = JSON.parse(firstLine);
-        } catch (err) {
-          throw buildVertexError(response, raw, "Vertex AI request failed (invalid NDJSON)");
-        }
-      } else {
+      // Parse ALL JSON lines from streaming/NDJSON response
+      const lines = raw.split('\n').filter((line) => line.trim().length > 0);
+      console.log(`📊 NDJSON: Received ${lines.length} line(s)`);
+      
+      if (lines.length === 0) {
         throw buildVertexError(response, raw, "Vertex AI request failed (empty stream)");
       }
+      
+      const parsedLines = [];
+      for (const line of lines) {
+        try {
+          parsedLines.push(JSON.parse(line));
+        } catch (err) {
+          console.warn('⚠️ Failed to parse NDJSON line:', line.substring(0, 100));
+        }
+      }
+      
+      if (parsedLines.length === 0) {
+        throw buildVertexError(response, raw, "Vertex AI request failed (invalid NDJSON)");
+      }
+      
+      console.log(`✅ Successfully parsed ${parsedLines.length} NDJSON line(s)`);
+      
+      // Return all parsed lines for processing
+      data = parsedLines.length === 1 ? parsedLines[0] : { streamedResponses: parsedLines };
     } else {
       throw buildVertexError(response, raw, "Vertex AI request failed (invalid JSON)");
     }
@@ -161,8 +175,27 @@ async function getSessionOrCreate(userId) {
 }
 
 async function associateSessionToUser(userId, sessionId) {
-  if((await ChatSession.findOne({ userId, sessionId })))return sessionId;
+  // Check if this association already exists
+  const existing = await ChatSession.findOne({ userId, sessionId });
+  if (existing) {
+    console.log('📌 Session already associated:', sessionId);
+    return sessionId;
+  }
+  
+  // Limit: Keep only 5 most recent sessions per user
+  const userSessions = await ChatSession.find({ userId }).sort({ createdAt: -1 });
+  
+  if (userSessions.length >= 5) {
+    // Delete oldest sessions
+    const sessionsToDelete = userSessions.slice(4); // Keep 4, delete rest
+    const idsToDelete = sessionsToDelete.map(s => s._id);
+    await ChatSession.deleteMany({ _id: { $in: idsToDelete } });
+    console.log(`🗑️ Cleaned up ${idsToDelete.length} old session(s) for user`);
+  }
+  
+  // Create new association
   await ChatSession.create({ userId, sessionId });
+  console.log('✅ Session associated:', sessionId);
   return sessionId;
 }
 

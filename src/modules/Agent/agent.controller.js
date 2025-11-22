@@ -39,7 +39,6 @@ function extractUserMessageText(rawText) {
   }
 
   // If the text contains <user_message>...</user_message>, extract inner content
-  console.log(rawText);
   const match = rawText.match(/<user_message>\s*([\s\S]*?)\s*<\/user_message>/i);
   if (match && match[1]) {
     return match[1];
@@ -85,6 +84,34 @@ function buildTurnsFromEvents(events) {
 }
 
 function extractAgentResponse(streamQueryData) {
+  // Handle multiple streamed responses
+  if (streamQueryData?.streamedResponses && Array.isArray(streamQueryData.streamedResponses)) {
+    const agentMessages = [];
+    
+    for (const response of streamQueryData.streamedResponses) {
+      if (response?.content?.parts?.length > 0) {
+        for (const part of response.content.parts) {
+          if (part?.text && typeof part.text === 'string' && part.text.trim().length > 0) {
+            agentMessages.push({
+              content: part.text,
+              author: response.author || 'agent',
+              invocation_id: response.invocation_id,
+              timestamp: response.timestamp
+            });
+          }
+        }
+      }
+    }
+    
+    // Return all messages if multiple, or single message, or fall back to original data
+    if (agentMessages.length > 1) {
+      return { multipleMessages: agentMessages };
+    } else if (agentMessages.length === 1) {
+      return agentMessages[0];
+    }
+  }
+  
+  // Handle single response
   if (streamQueryData?.content?.parts?.length > 0) {
     return {
       content: streamQueryData.content.parts[0].text,
@@ -93,6 +120,7 @@ function extractAgentResponse(streamQueryData) {
       timestamp: streamQueryData.timestamp
     };
   }
+  
   return streamQueryData;
 }
 
@@ -166,8 +194,11 @@ async function listSessions(req, res) {
       sessionsList = [];
     }
 
+    // Limit to most recent 5 sessions to avoid overwhelming frontend
+    const recentSessions = sessionsList.slice(0, 5);
+
     const fullSessions = await Promise.all(
-      sessionsList.map(async (session) => {
+      recentSessions.map(async (session) => {
         const sessionId = extractSessionId(session);
         if (!sessionId) return session;
         try {
@@ -280,9 +311,15 @@ async function chat(req, res) {
     }
 
     let actualSessionId = sessionId;
+    let isNewSession = false;
+    
     if (!actualSessionId) {
+      console.log('🆕 Creating new session for userId:', userId);
       actualSessionId = await agentService.createSession(userId);
       await agentService.associateSessionToUser(userId, actualSessionId);
+      isNewSession = true;
+    } else {
+      console.log('♻️ Using existing session:', actualSessionId);
     }
 
     const enhancedMessage = buildEnhancedPrompt(message, {
@@ -293,13 +330,22 @@ async function chat(req, res) {
       actualSessionId
     });
 
+    console.log('📤 Sending message to agent for session:', actualSessionId);
     const streamQueryData = await agentService.streamQuery(userId, actualSessionId, enhancedMessage);
+    
+    // Log the raw stream data to understand structure
+    console.log('📦 [RAW STREAM DATA] Keys:', Object.keys(streamQueryData || {}));
     const agentResponse = extractAgentResponse(streamQueryData);
 
-    res.json({
+    // Build response object
+    const responseData = {
       sessionId: actualSessionId,
-      response: agentResponse
-    });
+      response: agentResponse,
+      timestamp: Date.now() / 1000,
+      isNewSession
+    };
+
+    res.json(responseData);
 
   } catch (error) {
     handleServerError(res, error, 'Failed to communicate with agent');
