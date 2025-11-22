@@ -129,10 +129,16 @@ export class UserController {
       path: "/",
     });
 
+    // Return user without password
+    const userObject = user.toObject();
+    delete userObject.password;
+
     res.status(200).json({
+      success: true,
       message: "Login successful",
       accessToken,
-      role: user.role,
+      isNewUser: false,
+      user: userObject,
     });
   }
   // profile controller methods will be here in future
@@ -434,43 +440,52 @@ export class UserController {
     }
   }
 
-  async googleAuth(req, res) {
-    const { token } = req.body;
-
-    // Validate input
-    if (!token) {
-      return res.status(400).json({
-        success: false,
-        message: "Google token is required",
-      });
-    }
-
-    // Authenticate with Google
-    const result = await googleAuthService.authenticateWithGoogle(token);
-
-    return res.status(200).json({
-      success: true,
-      message: result.message,
-      isNewUser: result.isNewUser,
-      token: result.token,
-      user: result.user,
-    });
-  }
-  async getCurrentUser(req, res) {
+  async googleAuth(req, res, next) {
     try {
-      // req.user is set by authentication middleware
-      const userObject = req.user.toObject();
-      delete userObject.password;
+      const { token } = req.body;
+
+      // Validate input
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: "Google token is required",
+        });
+      }
+
+      // Authenticate with Google
+      const result = await googleAuthService.authenticateWithGoogle(token);
+
+      // Generate refresh token
+      const refreshToken = generateRefreshToken({
+        userId: result.user._id,
+      });
+
+      // Set refresh token in secure HTTP-only cookie
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // HTTPS only in production
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+      });
+
+      // Record login activity for analytics
+      const ipAddress =
+        req.ip ||
+        req.headers["x-forwarded-for"] ||
+        req.connection.remoteAddress;
+      const userAgent = req.headers["user-agent"];
+      await analyticsService.recordLogin(result.user._id, ipAddress, userAgent);
 
       return res.status(200).json({
         success: true,
-        user: userObject,
+        message: result.message,
+        isNewUser: result.isNewUser,
+        accessToken: result.token,
+        user: result.user,
       });
     } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to retrieve user data",
-      });
+      next(error);
     }
   }
 }

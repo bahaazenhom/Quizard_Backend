@@ -219,7 +219,6 @@ router.post(
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.get("/me", auth(), userController.getCurrentUser);
 router.get("/", auth(), userController.getProfile);
 
 /**
