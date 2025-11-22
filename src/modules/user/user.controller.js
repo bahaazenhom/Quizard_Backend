@@ -456,4 +456,21 @@ export class UserController {
       user: result.user,
     });
   }
+  async getCurrentUser(req, res) {
+    try {
+      // req.user is set by authentication middleware
+      const userObject = req.user.toObject();
+      delete userObject.password;
+
+      return res.status(200).json({
+        success: true,
+        user: userObject,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to retrieve user data",
+      });
+    }
+  }
 }
