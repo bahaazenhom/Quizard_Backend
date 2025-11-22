@@ -10,6 +10,7 @@ import { ErrorClass } from "../../utils/errorClass.util.js";
 import planModel from "../../models/plan.model.js";
 import { SubscriptionService } from "../subscription/subscription.service.js";
 import { AnalyticsService } from "../analytics/analytics.service.js";
+import googleAuthService from "./googleAuth.service.js";
 const userService = new UserService();
 const subscriptionService = new SubscriptionService();
 const analyticsService = new AnalyticsService();
@@ -431,5 +432,28 @@ export class UserController {
         )
       );
     }
+  }
+
+  async googleAuth(req, res) {
+    const { token } = req.body;
+
+    // Validate input
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Google token is required",
+      });
+    }
+
+    // Authenticate with Google
+    const result = await googleAuthService.authenticateWithGoogle(token);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      isNewUser: result.isNewUser,
+      token: result.token,
+      user: result.user,
+    });
   }
 }
