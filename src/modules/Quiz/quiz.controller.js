@@ -9,10 +9,11 @@ export class QuizController {
         try {
             console.log('📝 createQuizFromDetails called');
             console.log('📦 Request body keys:', Object.keys(req.body));
+            console.log('📦 Request headers session-id:', req.headers['session-id']);
             console.log('📦 Request headers x-session-id:', req.headers['x-session-id']);
             
             const { quiz_details } = req.body;
-            const sessionId = req.body.sessionId || req.body.session_id || req.headers['x-session-id'];
+            const sessionId = req.body.sessionId || req.body.session_id || req.headers['session-id'] || req.headers['x-session-id'];
             
             console.log('🔑 Extracted sessionId:', sessionId);
             
@@ -65,11 +66,12 @@ export class QuizController {
         try {
             console.log('✏️ updateQuizFromDetails called');
             console.log('📦 Request body keys:', Object.keys(req.body));
+            console.log('📦 Request headers session-id:', req.headers['session-id']);
             console.log('📦 Request headers x-session-id:', req.headers['x-session-id']);
             
             const { quiz_details } = req.body;
             const { id } = req.params;
-            const sessionId = req.body.sessionId || req.body.session_id || req.headers['x-session-id'];
+            const sessionId = req.body.sessionId || req.body.session_id || req.headers['session-id'] || req.headers['x-session-id'];
             
             console.log('🔑 Extracted sessionId:', sessionId);
             console.log('🆔 Quiz ID to update:', id);
