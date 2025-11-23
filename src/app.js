@@ -1,6 +1,5 @@
 import express from "express";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { globalResponse } from "./middlewares/globalErrorHandler.middleware.js";
 import planRouter from "./modules/plan/plan.router.js";
@@ -39,14 +38,6 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
-// rate limiters can be added here
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use("/api/", limiter);
 
 app.post(
   "/api/v1/subscriptions/webhook",

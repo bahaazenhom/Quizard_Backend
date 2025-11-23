@@ -58,6 +58,7 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
 - Authentication: sessionId is REQUIRED on every tool call; do not ask the educator for it. If missing, respond with the provided error messages.
 - Workflow: Parse context → fetch materials per module → gather all quiz requirements → generate questions → validate → preview → wait for explicit approval → submit quiz → post announcement.
 - Tools: Always pass sessionId; parse JSON; check success; handle failures with educator-friendly messages only.
+- **CRITICAL**: When calling quiz creation/update endpoints, you MUST include the session_id (use value: ${safeValue(actualSessionId)}) in the request body as "session_id" field.
 - Scope: Stay within provided materials; do not invent content; balance coverage across selected modules.
 - If he provided the selected modules at the beginning, do not ask for them again and use them directly.
 </agent_instructions>

@@ -17,6 +17,15 @@ const chatSessionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Quiz",
       default: null
+    },
+    quizAction: {
+      type: String,
+      enum: ['created', 'updated', null],
+      default: null
+    },
+    quizUpdatedAt: {
+      type: Number,
+      default: null
     }
   },
   { timestamps: true }

@@ -341,14 +341,19 @@ async function chat(req, res) {
     const ChatSession = (await import('../../models/chatSession.model.js')).default;
     const session = await ChatSession.findOne({ sessionId: actualSessionId });
     const currentQuizId = session?.currentQuizId ? session.currentQuizId.toString() : '';
+    const quizAction = session?.quizAction || null;
+    const quizUpdatedAt = session?.quizUpdatedAt || null;
     
     console.log('🎯 Current quiz ID for session:', currentQuizId || '(empty)');
+    console.log('🎯 Quiz action:', quizAction, '| Updated at:', quizUpdatedAt);
 
     // Build response object
     const responseData = {
       sessionId: actualSessionId,
       response: agentResponse,
       quizId: currentQuizId,
+      quizAction: quizAction,
+      quizUpdatedAt: quizUpdatedAt,
       timestamp: Date.now() / 1000,
       isNewSession
     };

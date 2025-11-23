@@ -30,7 +30,11 @@ export class QuizController {
                 
                 const updateResult = await ChatSession.findOneAndUpdate(
                     { sessionId },
-                    { currentQuizId: newQuiz._id },
+                    { 
+                        currentQuizId: newQuiz._id,
+                        quizAction: 'created',
+                        quizUpdatedAt: Date.now()
+                    },
                     { upsert: false, new: true }
                 );
                 
@@ -85,7 +89,11 @@ export class QuizController {
                 
                 const updateResult = await ChatSession.findOneAndUpdate(
                     { sessionId },
-                    { currentQuizId: id },
+                    { 
+                        currentQuizId: id,
+                        quizAction: 'updated',
+                        quizUpdatedAt: Date.now()
+                    },
                     { upsert: false, new: true }
                 );
                 
