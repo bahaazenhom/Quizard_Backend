@@ -16,7 +16,7 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
     actualSessionId ||
     (Array.isArray(selectedModules) && selectedModules.length > 0) ||
     safeValue(groupId) ||
-    safeValue(groupName) ||
+    safeValue(groupName) || 
     safeValue(educatorName);
 
   // If no contextual info is provided, keep the original message untouched
@@ -51,6 +51,7 @@ export function buildEnhancedPrompt(userMessage, context = {}) {
   }
 
   promptContext += `</selected_modules>
+  <timezone>timezone is: EET</timezone>
 
 <agent_instructions>
 - Role: Quiz-generation assistant for educators (analyze materials, gather requirements, generate/validate quizzes, post announcements).
